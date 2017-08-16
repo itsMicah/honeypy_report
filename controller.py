@@ -1,4 +1,4 @@
-import time, json
+import time, json, requests
 from honeypydb.DatabaseController import DatabaseController as db
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
@@ -30,6 +30,13 @@ class ReportController(object):
         }
 
     def createReport(self, data):
+        if data["type"] == "test":
+            return self.createTestReport(data)
+        elif data["type"] == "set":
+            return self.createSetReport(data)
+
+    def createTestReport(self, data):
+        data["type"] = "test"
         report = {"properties":data, "tests":[]}
         result = self.validateReport(report)
         if result:
@@ -37,6 +44,44 @@ class ReportController(object):
         report = self.setTime(report)
         reportId = self.db.add(report)
         return self.response(data = str(reportId), status = 201)
+
+    def createSetReport(self, data):
+        self.setObject = data
+        self.setObject["type"] = "set"
+        _set = {"properties":self.setObject,"tests":[]}
+        for test in data["tests"]:
+            index = data["tests"].index(test)
+            properties = self.generateTestProperties(test, index)
+            _set["tests"].append({"properties":properties, "tests":[]})
+        _set = self.setTime(_set)
+        reportId = self.db.add(_set)
+        return self.response(data = str(reportId), status = 201)
+
+    def generateTestProperties(self, path, index):
+        test = {
+            "path":path,
+            "time":str(round(int(time.time() * 1000))),
+            "type":"test",
+            "index":index,
+            "set":True,
+            "id":str(ObjectId())
+        }
+        response = self.getTestProperties(path)
+        data = response["properties"]
+        data.update(test)
+        if self.setObject["inherit"] == True:
+            data.update({
+                "url":self.setObject["url"],
+                "browser":self.setObject["browser"],
+                "host":self.setObject["host"],
+                "setName":self.setObject["name"],
+            })
+        test = data
+        return test
+
+    def getTestProperties(self, path):
+        response = requests.get("http://localhost:30001/tests?path=" + path)
+        return response.json()["data"]
 
     def validateReport(self, report):
         if "type" in report["properties"]:
@@ -58,7 +103,7 @@ class ReportController(object):
             return self.response(errors = "Please provide a valid test name", status = 400)
         if "content" not in report["properties"] or not report["properties"]["content"]:
             return self.response(errors = "Test must contain content", status = 400)
-        if "url" not in report["properties"] or not report["properties"]["url"]:
+        if "url" not in report["properties"]:
             return self.response(errors = "Please provide a valid URL", status = 400)
         if "browser" not in report["properties"] or not report["properties"]["browser"]:
             return self.response(errors = "Please provider a browser", status = 400)
@@ -83,7 +128,7 @@ class ReportController(object):
 
     def setTime(self, report):
         report["properties"]["date"] = time.strftime("%m%d%y")
-        report["properties"]["time"] = time.time()
+        report["properties"]["time"] = str(round(int(time.time() * 1000)))
         return report
 
     def parseObjectIds(self, data):
@@ -92,7 +137,7 @@ class ReportController(object):
         if "properties" in data:
             if "_id" in data["properties"]:
                 data["properties"]["_id"] = str(data["properties"]["_id"])
-            if "set" in data["properties"]:
+            if "type" in data["properties"]:
                 if data["properties"]["type"] == "set":
                     for test in data["tests"]:
                         index = data["tests"].index(test)
@@ -120,7 +165,8 @@ class ReportController(object):
             results = self.db.getData({"properties.type":"set", "properties.name":search["set"], "properties.time": {"$lte":search["max"], "$gte":search["min"]} })
         else:
             results = self.db.getData({"properties.time": {"$lte":search["max"], "$gte":search["min"]} })
-        return self.cleanseCursorObject(results)
+        results = self.cleanseCursorObject(results)
+        return self.response(data = results, status = 200)
 
     def searchSetReports(self, search):
         results = self.db.getData({"properties.time": {"$lte":search["max"], "$gte":search["min"]} })
@@ -130,6 +176,8 @@ class ReportController(object):
             return self.response(errors = "Please provide a minimum timestamp", status = 400)
         if "max" not in search or not search["max"]:
             return self.response(errors = "Please provide a maximium timestamp", status = 400)
+        if "type" not in search or not search["type"]:
+            return self.response(errors = "Please a search type", status = 400)
 
     def cleanseCursorObject(self, data):
         node = []
@@ -175,7 +223,7 @@ class ReportController(object):
         if not "type" in data["properties"] or not data["properties"]["type"]:
             data["properties"]["type"] = "test"
         if data["properties"]["set"]:
-            if "index" not in data["properties"] or not data["properties"]["index"]:
+            if "index" not in data["properties"]:
                 return self.response(errors = "Please provide an index", status = 400)
         return self.checkReport()
 
@@ -184,13 +232,19 @@ class ReportController(object):
         if result:
             return result
         test = data["test"]
-        _type = data["properties"]["type"]
+        _type = self.ifTestinSet(data)
         index = data["properties"]["index"]
-        if _type == "set":
+        if _type:
             self.addTestToSet(test, index)
         else:
             self.addTest(test)
         return self.response(status = 201)
+
+    def ifTestinSet(self, data):
+        if "set" in  data["properties"]:
+            return data["properties"]["set"]
+        else:
+            return False
 
     def checkReport(self):
         report = self.db.getData({"_id":ObjectId(self.reportId)}, False)
@@ -228,7 +282,6 @@ class ReportController(object):
 
     def finished(self):
         report = self.db.getData({"_id":ObjectId(self.reportId)}, False)
-        print(report)
         if report["properties"]["type"] == "set":
             return self.finishSet(report)
         else:
@@ -241,16 +294,13 @@ class ReportController(object):
 
     def checkIfSetFinished(self, report = None):
         if report == None:
-             report = self.getReport()
+             report = self.getReport()["data"]
         self.ifFinish = True
-        total = 0
         for test in report["tests"]:
             if "end" not in test["properties"]:
                 self.ifFinish = False
-            else:
-                total += 1
-        if self.ifFinish == True and total == len(report["properties"]["tests"]):
-            currentTime = str(int(time.time() * 1000))
+        if self.ifFinish == True:
+            currentTime = str(round(int(time.time() * 1000)))
             self.patchReport({"properties.end":currentTime})
 
     def checkSetStatus(self, report):
@@ -258,7 +308,7 @@ class ReportController(object):
         totalMessage = "Success"
         for test in report["tests"]:
             index = report["tests"].index(test)
-            test = self.checkTestStatus(test, index)
+            self.checkTestStatus(test, index)
             if test["properties"]["result"] == False:
                 totalResult = False
                 totalMessage = "Failure"
@@ -318,7 +368,7 @@ class ReportController(object):
 
     def endTest(self, index = None):
         if index != None:
-            response = self.patchReport({"tests." + str(index) + ".properties.end":str(int(time.time() * 1000))})
+            response = self.patchReport({"tests." + str(index) + ".properties.end":str(round(int(time.time() * 1000)))})
             self.checkIfSetFinished()
         else:
-            response = self.patchReport({"properties.end":str(int(time.time() * 1000))})
+            response = self.patchReport({"properties.end":str(round(int(time.time() * 1000)))})

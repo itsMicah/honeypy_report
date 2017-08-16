@@ -39,15 +39,12 @@ def getReportsByDate():
     data = request.get_json()
     results = ReportController().getReportsByDate(data)
     return createResponse(results)
-#
-# @reportApi.route("/report/<reportId>", methods = ["PATCH"])
-# def patchReport(reportId):
-#     try:
-#         data = request.get_json()
-#         data = ReportController(reportId).patchReport(data)
-#         return createResponse(data, "success", 200)
-#     except:
-#         return createResponse(None, "failure", 500)
+
+@reportApi.route("/report/<reportId>", methods = ["PATCH"])
+def patchReport(reportId):
+    data = request.get_json()
+    results = ReportController(reportId).patchReport(data)
+    return createResponse(results)
 
 # @reportApi.route("/report/<reportId>", methods = ["PUT"])
 # def putReport(reportId):
