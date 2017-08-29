@@ -5,7 +5,7 @@ from flask import request
 from flask_cors import CORS, cross_origin
 from os.path import dirname, abspath
 
-from controller import ReportController
+from honeypy_report.controller import ReportController
 
 reportController = ReportController()
 reportApi = Flask(__name__)
@@ -77,6 +77,9 @@ def deleteReport(reportId):
     return createResponse(response)
 
 
+def main():
+    reportApi.run(host="0.0.0.0", port=30002, threaded=True)
+
 # Run service
 if __name__ == "__main__":
-    reportApi.run(port=30002, threaded=True)
+    main()
