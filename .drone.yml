@@ -1,0 +1,28 @@
+pipeline:
+  build:
+    when:
+      event:
+        exclude: deployment
+    image: python:alpine3.6
+    commands:
+      - python setup.py sdist
+
+  parse_tag:
+    when:
+      branch: development
+      event: [push, deployment]
+    image: alpine
+    commands:
+      - VERSION=$(cat VERSION)
+      - TAG=$VERSION-${DRONE_COMMIT_SHA:0:8}
+      - echo $TAG > .tags
+
+  publish:
+    when:
+      branch: development
+      event: push
+    secrets:
+      - docker_username
+      - docker_password
+    image: plugins/docker
+    repo: devcohealth/honeypy-report
