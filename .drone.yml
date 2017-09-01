@@ -13,7 +13,7 @@ pipeline:
       event: [push, deployment]
     image: alpine
     commands:
-      - VERSION=$(cat VERSION)
+      - VERSION=$(cat setup.py | grep version | sed "s/version = \"\(.*\)\",/\1/")
       - TAG=$VERSION-${DRONE_COMMIT_SHA:0:8}
       - echo $TAG > .tags
 
