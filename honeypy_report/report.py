@@ -10,6 +10,17 @@ from honeypy_report.controller import ReportController
 reportController = ReportController()
 reportApi = Flask(__name__)
 CORS(reportApi, resources={r'\/report\/?.*': {'origins': 'http://localhost:4200'}})
+directory = dirname(abspath(__file__))
+
+def getConfig():
+    Config = configparser.ConfigParser()
+    Config.read(directory + "/config/config.ini")
+    host = Config.get("service", "host")
+    port = Config.get("service", "port")
+    return {
+        "host": host,
+        "port": port
+    }
 
 def createResponse(data):
     response = {
@@ -78,7 +89,8 @@ def deleteReport(reportId):
 
 
 def main():
-    reportApi.run(host="0.0.0.0", port=8080, threaded=True)
+    config = getConfig()
+    reportApi.run(host=config["host"], port=config["port"], threaded=True)
 
 # Run service
 if __name__ == "__main__":
