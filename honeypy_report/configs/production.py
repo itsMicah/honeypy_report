@@ -4,8 +4,8 @@ PORT=80
 DEBUG=False
 
 # Phrase Service Configs
-REPORT_URL="http://phrase-service"
-REPORT_PORT=80
+PHRASE_URL="http://phrase-service"
+PHRASE_PORT=80
 
 # Host Service Configs
 HOST_URL="http://host-service"

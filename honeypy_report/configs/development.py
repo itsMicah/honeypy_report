@@ -3,13 +3,13 @@ IP="127.0.0.1"
 PORT=30002
 DEBUG=False
 
-# H0st Service Configs
-REPORT_URL="127.0.0.1"
-REPORT_PORT=30003
+# Host Service Configs
+HOST_URL="127.0.0.1"
+HOST_PORT=30003
 
 # Phrase Service Configs
-HOST_URL="127.0.0.1"
-HOST_PORT=30007
+PHRASE_URL="127.0.0.1"
+PHRASE_PORT=30007
 
 # Set Service Configs
 SET_URL="127.0.0.1"
