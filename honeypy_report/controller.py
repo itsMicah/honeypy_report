@@ -1,11 +1,12 @@
 import time, json, requests
-from honeypydb.DatabaseController import DatabaseController as db
+from honeypy.db import DatabaseController as db
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
 
 class ReportController(object):
-    def __init__(self, reportId = None, test = None):
-        self.db = db("ReportDB", "report_collection")
+    def __init__(self, reportId = None, test = None, config = None):
+        self.config = config
+        self.db = db("ReportDB", "report_collection", ip = config["DATABASE_URL"], port = config["DATABASE_PORT"])
         self.reportId = reportId
         self.test = test
         self.ifFinish = False
