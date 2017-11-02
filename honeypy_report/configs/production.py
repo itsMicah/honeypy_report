@@ -20,5 +20,5 @@ TEST_URL="http://test-service"
 TEST_PORT=80
 
 # Database Configs
-DATABASE_URL="http://my-release-mongodb-replicaset"
+DATABASE_URL="my-release-mongodb-replicaset"
 DATABASE_PORT=27017
