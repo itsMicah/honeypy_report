@@ -81,7 +81,7 @@ class ReportController(object):
         return test
 
     def getTestProperties(self, path):
-        response = requests.get("http://localhost:30001/tests?path=" + path)
+        response = requests.get(self.config["TEST_URL"] ":" + self.config["TEST_PORT"] + "/tests?path=" + path)
         return response.json()["data"]
 
     def validateReport(self, report):
