@@ -4,9 +4,11 @@ from honeypy.db import DatabaseController as db
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
 
+from honeypy_report import reportApi
+
 class ReportController(object):
-    def __init__(self, reportId = None, test = None, config = None):
-        self.config = config
+    def __init__(self, reportId = None, test = None):
+        self.config = reportApi.config
         self.db = db("ReportDB", "report_collection", ip = self.config["DATABASE_URL"], port = self.config["DATABASE_PORT"])
         self.reportId = reportId
         self.test = test
@@ -38,8 +40,13 @@ class ReportController(object):
         }
 
     def createReport(self, data):
+        print(data)
         if data["type"] == "test":
-            return self.createTestReport(data)
+            report = self.createTestReport(data)
+            print("\n==")
+            print(report)
+            print("\n==")
+            return report
         elif data["type"] == "set":
             return self.createSetReport(data)
 
