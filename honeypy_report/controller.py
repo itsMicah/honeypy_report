@@ -1,4 +1,5 @@
 import time, json, requests
+from flask import Flask
 from honeypy.db import DatabaseController as db
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
@@ -6,7 +7,7 @@ from bson.errors import InvalidId
 class ReportController(object):
     def __init__(self, reportId = None, test = None, config = None):
         self.config = config
-        self.db = db("ReportDB", "report_collection", ip = config["DATABASE_URL"], port = config["DATABASE_PORT"])
+        self.db = db("ReportDB", "report_collection", ip = self.config["DATABASE_URL"], port = self.config["DATABASE_PORT"])
         self.reportId = reportId
         self.test = test
         self.ifFinish = False
@@ -23,6 +24,12 @@ class ReportController(object):
                 kwargs["result"] = "success"
         if "errors" not in kwargs:
             kwargs["errors"] = None
+        print({
+            "result":kwargs["result"],
+            "status":kwargs["status"],
+            "data":kwargs["data"],
+            "errors":kwargs["errors"]
+        })
         return {
             "result":kwargs["result"],
             "status":kwargs["status"],
@@ -81,7 +88,7 @@ class ReportController(object):
         return test
 
     def getTestProperties(self, path):
-        response = requests.get(self.config["TEST_URL"] ":" + self.config["TEST_PORT"] + "/tests?path=" + path)
+        response = requests.get(self.config["TEST_URL"] + ":" + self.config["TEST_PORT"] + "/tests?path=" + path)
         return response.json()["data"]
 
     def validateReport(self, report):
