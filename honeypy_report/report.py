@@ -11,19 +11,8 @@ reportApi = Flask(__name__)
 CORS(reportApi, resources={r'\/report\/?.*': {'origins': 'http://localhost:4200'}})
 directory = dirname(abspath(__file__))
 
-def getConfig():
-    Config = configparser.ConfigParser()
-    Config.read(directory + "/config/config.ini")
-    host = Config.get("service", "host")
-    port = Config.get("service", "port")
-    return {
-        "host": host,
-        "port": port
-    }
-
 reportApi.config.from_object('honeypy_report.configs.development')
 reportApi.config.from_envvar('honeypyReportEnvironment', silent = True)
-reportController = ReportController(config = reportApi.config)
 
 def createResponse(data):
     response = {
@@ -40,41 +29,41 @@ def createResponse(data):
 @reportApi.route("/report", methods = ["POST"])
 def postReport():
     data = request.get_json()
-    response = ReportController().createReport(data)
+    response = ReportController(config = reportApi.config).createReport(data)
     return createResponse(response)
 
 @reportApi.route("/report/<reportId>", methods = ["GET"])
 def getReport(reportId):
-    response = ReportController(reportId).getReport()
+    response = ReportController(reportId, config = reportApi.config).getReport()
     return createResponse(response)
 
 @reportApi.route("/report/search", methods = ["POST"])
 def getReportsByDate():
     data = request.get_json()
-    results = ReportController().getReportsByDate(data)
+    results = ReportController(config = reportApi.config).getReportsByDate(data)
     return createResponse(results)
 
 @reportApi.route("/report/<reportId>", methods = ["PATCH"])
 def patchReport(reportId):
     data = request.get_json()
-    results = ReportController(reportId).patchReport(data)
+    results = ReportController(reportId, config = reportApi.config).patchReport(data)
     return createResponse(results)
 
 @reportApi.route("/report/<reportId>/add", methods = ["PATCH"])
 def addToReport(reportId):
     data = request.get_json()
-    response = ReportController(reportId).addReport(data)
+    response = ReportController(reportId, config = reportApi.config).addReport(data)
     return createResponse(response)
 
 @reportApi.route("/report/<reportId>/finish", methods = ["GET"])
 def finishReport(reportId):
     test = request.args.get('test')
-    response = ReportController(reportId, test).finished()
+    response = ReportController(reportId, test, config = reportApi.config).finished()
     return createResponse(response)
 
 @reportApi.route("/report/<reportId>", methods = ["DELETE"])
 def deleteReport(reportId):
-    response = ReportController(reportId).deleteReport()
+    response = ReportController(reportId, config = reportApi.config).deleteReport()
     return createResponse(response)
 
 
