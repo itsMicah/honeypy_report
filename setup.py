@@ -9,7 +9,6 @@ setup(
     author_email = "prescottmicah@gmail.com",
     packages = [
         "honeypy_report",
-        "honeypy_report.configs",
         "tests"
     ],
     install_requires = [
