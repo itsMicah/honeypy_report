@@ -66,7 +66,7 @@ def deleteReport(reportId):
 
 
 def main():
-    reportApi.run(host=reportApi.config["IP"], port=reportApi.config["PORT"], threaded=True)
+    reportApi.run(host=reportApi.config["REPORT_IP"], port=reportApi.config["REPORT_PORT"], threaded=True)
 
 # Run service
 if __name__ == "__main__":

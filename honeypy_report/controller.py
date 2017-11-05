@@ -1,6 +1,6 @@
 import time, json, requests
 from flask import Flask
-from honeypy.db import DatabaseController as db
+from honeypy_common.db import DatabaseController as db
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
 
@@ -9,7 +9,7 @@ from honeypy_report import reportApi
 class ReportController(object):
     def __init__(self, reportId = None, test = None):
         self.config = reportApi.config
-        self.db = db("ReportDB", "report_collection", ip = self.config["DATABASE_URL"], port = self.config["DATABASE_PORT"])
+        self.db = db("ReportDB", "report_collection", ip = self.config["DATABASE_IP"], port = self.config["DATABASE_PORT"])
         self.reportId = reportId
         self.test = test
         self.ifFinish = False
@@ -40,18 +40,18 @@ class ReportController(object):
         }
 
     def createReport(self, data):
+        print("\n==")
         print(data)
+        print("\n==")
         if data["type"] == "test":
             report = self.createTestReport(data)
-            print("\n==")
-            print(report)
-            print("\n==")
             return report
         elif data["type"] == "set":
             return self.createSetReport(data)
 
     def createTestReport(self, data):
         data["type"] = "test"
+        data.pop("_id", None)
         report = {"properties":data, "tests":[]}
         result = self.validateReport(report)
         if result:
