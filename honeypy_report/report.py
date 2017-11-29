@@ -27,7 +27,6 @@ def createResponse(data):
 def postReport():
     data = request.get_json()
     response = ReportController().createReport(data)
-    print(response)
     return createResponse(response)
 
 @reportApi.route("/report/<reportId>", methods = ["GET"])
@@ -55,8 +54,8 @@ def addToReport(reportId):
 
 @reportApi.route("/report/<reportId>/finish", methods = ["GET"])
 def finishReport(reportId):
-    test = request.args.get('test')
-    response = ReportController(reportId, test).finished()
+    path = request.args.get('path')
+    response = ReportController(reportId, path).finished()
     return createResponse(response)
 
 @reportApi.route("/report/<reportId>", methods = ["DELETE"])

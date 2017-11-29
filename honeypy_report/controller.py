@@ -1,17 +1,18 @@
-import time, json, requests
+import time, json
 from flask import Flask
-from honeypy_common.db import DatabaseController as db
+from honeypy.common.db import DatabaseController as db
+from honeypy.common.api.test import TestService
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
 
 from honeypy_report import reportApi
 
 class ReportController(object):
-    def __init__(self, reportId = None, test = None):
+    def __init__(self, reportId = None, path = None):
         self.config = reportApi.config
         self.db = db("ReportDB", "report_collection", ip = self.config["DATABASE_IP"], port = self.config["DATABASE_PORT"])
         self.reportId = reportId
-        self.test = test
+        self.path = path
         self.ifFinish = False
 
     def response(self, **kwargs):
@@ -40,17 +41,14 @@ class ReportController(object):
         }
 
     def createReport(self, data):
-        print("\n==")
-        print(data)
-        print("\n==")
-        if data["type"] == "test":
+        if data["type"] == "feature":
             report = self.createTestReport(data)
             return report
         elif data["type"] == "set":
             return self.createSetReport(data)
 
     def createTestReport(self, data):
-        data["type"] = "test"
+        data["type"] = "feature"
         data.pop("_id", None)
         report = {"properties":data, "tests":[]}
         result = self.validateReport(report)
@@ -76,13 +74,11 @@ class ReportController(object):
         test = {
             "path":path,
             "time":str(round(int(time.time() * 1000))),
-            "type":"test",
+            "type":"feature",
             "index":index,
             "set":True,
-            "id":str(ObjectId())
         }
-        response = self.getTestProperties(path)
-        data = response["properties"]
+        data = self.getTestProperties(path)
         data.update(test)
         if self.setObject["inherit"] == True:
             data.update({
@@ -95,7 +91,7 @@ class ReportController(object):
         return test
 
     def getTestProperties(self, path):
-        response = requests.get(self.config["TEST_URL"] + ":" + self.config["TEST_PORT"] + "/tests?path=" + path)
+        response = TestService().get(path, "feature")
         return response.json()["data"]
 
     def validateReport(self, report):
@@ -163,7 +159,7 @@ class ReportController(object):
 
     def getReport(self):
         try:
-            report = self.db.getData({"_id":ObjectId(self.reportId)}, False)
+            report = self.db.get_data({"_id":ObjectId(self.reportId)}, False)
             if not report:
                 return self.response(errors = "Unable to find report", status = 404)
             report = self.cleanObjectId(report)
@@ -177,14 +173,14 @@ class ReportController(object):
             return result
         results = None
         if search["type"] == "set":
-            results = self.db.getData({"properties.type":"set", "properties.name":search["set"], "properties.time": {"$lte":search["max"], "$gte":search["min"]} })
+            results = self.db.get_data({"properties.type":"set", "properties.name":search["set"], "properties.time": {"$lte":search["max"], "$gte":search["min"]} })
         else:
-            results = self.db.getData({"properties.time": {"$lte":search["max"], "$gte":search["min"]} })
+            results = self.db.get_data({"properties.time": {"$lte":search["max"], "$gte":search["min"]} })
         results = self.cleanseCursorObject(results)
         return self.response(data = results, status = 200)
 
     def searchSetReports(self, search):
-        results = self.db.getData({"properties.time": {"$lte":search["max"], "$gte":search["min"]} })
+        results = self.db.get_data({"properties.time": {"$lte":search["max"], "$gte":search["min"]} })
 
     def validateSearchByDate(self, search):
         if "min" not in search or not search["min"]:
@@ -211,9 +207,9 @@ class ReportController(object):
         data = self.db.patch(data, _filter)
         return data
 
-    def extendArray(self, data):
+    def extend_array(self, data):
         _filter = {"_id":ObjectId(self.reportId)}
-        data = self.db.extendArray(data, _filter)
+        data = self.db.extend_array(data, _filter)
         if data["_id"]:
             data["_id"] = str(data["_id"])
         return data
@@ -236,7 +232,7 @@ class ReportController(object):
         if "test" not in data or not data["test"]:
             return self.response(errors = "Please provide a test to add to the report", status = 400)
         if not "type" in data["properties"] or not data["properties"]["type"]:
-            data["properties"]["type"] = "test"
+            data["properties"]["type"] = "feature"
         if data["properties"]["set"]:
             if "index" not in data["properties"]:
                 return self.response(errors = "Please provide an index", status = 400)
@@ -262,7 +258,7 @@ class ReportController(object):
             return False
 
     def checkReport(self):
-        report = self.db.getData({"_id":ObjectId(self.reportId)}, False)
+        report = self.db.get_data({"_id":ObjectId(self.reportId)}, False)
         if not report:
             return self.response(errors = "Unable to find report", status = 404)
 
@@ -274,29 +270,29 @@ class ReportController(object):
                         if line["type"] == "scenario":
                             if line["id"] == test["scenarioId"]:
                                 lineIndex = report["tests"][index]["tests"].index(line)
-                                self.extendArray({"tests." + str(index) + ".tests." + str(lineIndex) + ".tests":test})
+                                self.extend_array({"tests." + str(index) + ".tests." + str(lineIndex) + ".tests":test})
                 else:
-                    self.extendArray({"tests." + str(index) + ".tests":test})
+                    self.extend_array({"tests." + str(index) + ".tests":test})
             else:
-                self.extendArray({"tests." + str(index) + ".tests":test})
+                self.extend_array({"tests." + str(index) + ".tests":test})
 
     def addTest(self, test):
             try:
                 if test["scenarioId"]:
-                    report = self.db.getData({"_id":ObjectId(self.reportId)}, False)
+                    report = self.db.get_data({"_id":ObjectId(self.reportId)}, False)
                     report = self.cleanObjectId(report)
                     for line in report["tests"]:
                         if line["type"] == "scenario":
                             if line["id"] == test["scenarioId"]:
                                 lineIndex = report["tests"].index(line)
-                                self.extendArray({"tests." + str(lineIndex) + ".tests":test})
+                                self.extend_array({"tests." + str(lineIndex) + ".tests":test})
                 else:
-                    self.extendArray({"tests":test})
+                    self.extend_array({"tests":test})
             except KeyError:
-                self.extendArray({"tests":test})
+                self.extend_array({"tests":test})
 
     def finished(self):
-        report = self.db.getData({"_id":ObjectId(self.reportId)}, False)
+        report = self.db.get_data({"_id":ObjectId(self.reportId)}, False)
         if report["properties"]["type"] == "set":
             return self.finishSet(report)
         else:
@@ -324,10 +320,11 @@ class ReportController(object):
         for test in report["tests"]:
             index = report["tests"].index(test)
             self.checkTestStatus(test, index)
-            if test["properties"]["result"] == False:
-                totalResult = False
-                totalMessage = "Failure"
-            report["tests"][index] = test
+            if "end" in test["properties"]:
+                if test["properties"]["result"] == False:
+                    totalResult = False
+                    totalMessage = "Failure"
+                report["tests"][index] = test
         self.patchReport({"properties.result":totalResult})
         self.patchReport({"properties.message":totalMessage})
         return self.response(status = 204)
@@ -352,9 +349,9 @@ class ReportController(object):
             self.patchReport({"properties.message":totalMessage})
         test["properties"]["result"] = totalResult
         test["properties"]["message"] = totalMessage
-        if self.test == test["properties"]["path"]:
+        if self.path == test["properties"]["path"]:
             self.endTest(testIndex)
-        elif test["properties"]["type"] == "test":
+        elif self.report["properties"]["type"] == "feature":
             self.endTest()
         return self.response(status = 204)
 
