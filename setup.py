@@ -17,7 +17,6 @@ setup(
         "click",
         "Flask",
         "Flask-Cors",
-        "honeypy",
         "idna",
         "Jinja2",
         "MarkupSafe",
