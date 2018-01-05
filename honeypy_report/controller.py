@@ -349,9 +349,9 @@ class ReportController(object):
             self.patchReport({"properties.message":totalMessage})
         test["properties"]["result"] = totalResult
         test["properties"]["message"] = totalMessage
-        if self.path == test["properties"]["path"]:
+        if self.path == test["properties"]["path"] and testIndex != None:
             self.endTest(testIndex)
-        elif self.report["properties"]["type"] == "feature":
+        elif self.getReport()["data"]["properties"]["type"] == "feature":
             self.endTest()
         return self.response(status = 204)
 
