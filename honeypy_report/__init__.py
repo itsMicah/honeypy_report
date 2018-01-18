@@ -1,4 +1,4 @@
 from flask import Flask
 
-reportApi = Flask(__name__)
-reportApi.config.from_envvar('HONEYPY_CONFIG')
+report_api = Flask(__name__)
+report_api.config.from_envvar('HONEYPY_CONFIG')
