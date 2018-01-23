@@ -288,12 +288,12 @@ def test_verify_added_scenario_2_test_2():
     response = report_service.get(pytest.report_id)
     assert response.status_code == 200
     data = response.json()
-    assert data["message"] == scenario_2_tests[1]["message"]
+    assert data["message"] == "Failure"
     assert data["result"] == scenario_2_tests[1]["result"]
     assert len(data["tests"]) == 2
     assert len(data["tests"][1]["tests"]) == 2
     assert data["tests"][1]["result"] == scenario_2_tests[1]["result"]
-    assert data["tests"][1]["message"] == scenario_2_tests[1]["message"]
+    assert data["tests"][1]["message"] == "Failure"
     assert data["tests"][1]["tests"][1]["_type"] == scenario_2_tests[1]["_type"]
     assert data["tests"][1]["tests"][1]["result"] == scenario_2_tests[1]["result"]
     assert data["tests"][1]["tests"][1]["message"] == scenario_2_tests[1]["message"]
@@ -315,7 +315,7 @@ def test_verify_finish():
     assert data["tests"][0]["result"] == scenario_1["result"]
     assert data["tests"][0]["message"] == scenario_1["message"]
     assert data["tests"][1]["result"] == scenario_2_tests[1]["result"]
-    assert data["tests"][1]["message"] == scenario_2_tests[1]["message"]
+    assert data["tests"][1]["message"] == "Failure"
     assert data["message"] == "Failure"
     assert data["result"] == False
     assert data["end"]
