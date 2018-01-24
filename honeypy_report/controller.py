@@ -156,8 +156,7 @@ class ReportController(object):
             FeatureReport.objects(id = report_id).modify(push__tests=Scenario(**data))
         elif data["_type"] == "test" and data["scenarioId"]:
             if data["result"] == False:
-                print("FALSE")
-                self.collection.update_one({ "_id": ObjectId(report_id), "tests": {"$elemMatch": {"scenarioId": ObjectId(data["scenarioId"])}}}, {'$set': {'tests.$.result':data["result"], 'tests.$.message':"Failure"}})
+                self.collection.update_one({ "_id": ObjectId(report_id), "tests": {"$elemMatch": {"scenarioId": ObjectId(data["scenarioId"])}}}, {'$set': {'tests.$.result':data["result"], 'tests.$.message':"Failure", 'result':data["result"], 'message':"Failure"}})
             self.collection.update_one({ "_id": ObjectId(report_id), "tests": {"$elemMatch": {"scenarioId": ObjectId(data["scenarioId"])}}}, {'$push': {'tests.$.tests':data}})
 
     def add_to_set(self, report_id, data):
@@ -165,18 +164,18 @@ class ReportController(object):
         Report.objects(id = report_id).update_one(set__modified = datetime.datetime.now())
         if data["_type"] == "test" and not "scenarioId" in data:
             if data["result"] == False:
-                result = self.collection.update_one({ "_id": ObjectId(report_id) }, {'$set': {'message':data["message"], 'result':data["result"]}})
+                result = self.collection.update_one({ "_id": ObjectId(report_id) }, {'$set': {'message':"Failure", 'result':data["result"]}})
             result = self.collection.update_one({ "_id": ObjectId(report_id), "tests": {"$elemMatch": {"path": data["path"]}} }, {'$push': {'tests.$.tests':data}})
         elif data["_type"] == "scenario" and "scenarioId" in data:
             result = self.collection.update_one({ "_id": ObjectId(report_id), "tests": {"$elemMatch": {"path": data["path"]}} }, {'$push': {'tests.$.tests':data}})
             if data["result"] == False:
-                result = self.collection.update_one({ "_id": ObjectId(report_id) }, {'$set': {'message':data["message"], 'result':data["result"]}})
-                result = self.collection.update_one({ "_id": ObjectId(report_id), "tests": {"$elemMatch": {"scenarioId": ObjectId(data["scenarioId"])}}}, {'$set': {'tests.$.result':data["result"]}, '$set': {'tests.$.message':data["message"]}})
+                result = self.collection.update_one({ "_id": ObjectId(report_id) }, {'$set': {'message':"Failure", 'result':data["result"]}})
+                result = self.collection.update_one({ "_id": ObjectId(report_id), "tests": {"$elemMatch": {"scenarioId": ObjectId(data["scenarioId"])}}}, {'$set': {'tests.$.result':data["result"]}, '$set': {'tests.$.message':"Failure"}})
         elif data["_type"] == "test" and data["scenarioId"]:
             if data["result"] == False:
-                result = self.collection.update_one({ "_id": ObjectId(report_id) }, {'$set': {'message':data["message"], 'result':data["result"]}})
+                result = self.collection.update_one({ "_id": ObjectId(report_id) }, {'$set': {'message':"Failure", 'result':data["result"]}})
                 result = self.collection.update_one({ "_id": ObjectId(report_id) }, {'$set': {'tests.$[a].tests.$[b].message':data["message"], 'tests.$[a].tests.$[b].result':data["result"]}}, array_filters=[{"a.path":data["path"]}, {"b.scenarioId":data["scenarioId"]}])
-                result = self.collection.update_one({ "_id": ObjectId(report_id), "tests": {"$elemMatch": {"path": data["path"]}}}, {'$set': {'tests.$.result':data["result"], 'tests.$.message':data["message"]}})
+                result = self.collection.update_one({ "_id": ObjectId(report_id), "tests": {"$elemMatch": {"path": data["path"]}}}, {'$set': {'tests.$.result':data["result"], 'tests.$.message':"Failure"}})
             result = self.collection.update_one({ "_id": ObjectId(report_id) }, {'$push': {'tests.$[a].tests.$[b].tests':data}}, array_filters=[{"a.path":data["path"]}, {"b.scenarioId":data["scenarioId"]}])
 
 
