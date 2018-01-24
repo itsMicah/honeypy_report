@@ -138,8 +138,8 @@ scenario_b_tests = [
 
 def test_create_features():
     """
-        Delete features before the test
-        Recreate the features
+        Setup test data
+        Delete and recreate the features
     """
     test_service.delete(feature_a["path"], "feature")
     response = test_service.create(feature_a)
@@ -173,7 +173,7 @@ def test_get_set():
 
 def test_create_report():
     """
-        Create the report
+        Create the report with the set
     """
     response = report_service.create(pytest._set)
     assert response.status_code == 201
@@ -210,7 +210,7 @@ def test_verify_incomplete_set_report():
 
 def test_add_scenario_a_feature_a():
     """
-        Add scenario a to feature a
+        Add scenario A to feature A
         Verify it was added
     """
     scenario_a["path"] = feature_a["path"]
@@ -233,9 +233,9 @@ def test_add_scenario_a_feature_a():
     assert pytest.report["tests"][0]["tests"][0]["result"] == True
     assert pytest.report["tests"][0]["tests"][0]["tests"] == []
 
-def test_add_subtests_scenario_a_feature_a():
+def test_add_subtest_1_scenario_a_feature_a():
     """
-        Add a test to scenario a within feature a
+        Add a test to scenario a within feature A
         Verify the test has the correct attributes
         Verify other features within the set
     """
@@ -261,7 +261,7 @@ def test_add_subtests_scenario_a_feature_a():
 
 def test_add_scenario_b_feature_a():
     """
-        Add scenario b to feature a
+        Add scenario B to feature A
     """
     scenario_b["path"] = feature_a["path"]
     response = report_service.add(pytest.report_id, scenario_b)
@@ -285,9 +285,9 @@ def test_add_scenario_b_feature_a():
     assert pytest.report["tests"][0]["tests"][1]["result"] == True
     assert pytest.report["tests"][0]["tests"][1]["tests"] == []
 
-def test_add_subtests_scenario_b_feature_a():
+def test_add_subtests_1_scenario_b_feature_a():
     """
-        Add a test to scenario a within feature a
+        Add a test to scenario a within feature A
         Verify the test has the correct attributes
         Verify other features within the set
     """
@@ -312,235 +312,414 @@ def test_add_subtests_scenario_b_feature_a():
     assert pytest.report["tests"][0]["tests"][1]["tests"][0]["result"] == scenario_b_tests[0]["result"]
     assert pytest.report["tests"][0]["tests"][1]["tests"][0]["message"] == scenario_b_tests[0]["message"]
 
+def test_add_subtests_2_scenario_b_feature_a():
+    """
+        Add a test to scenario a within feature a
+        Verify the test has the correct attributes
+        Verify other features within the set
+    """
+    scenario_b_tests[1]["path"] = feature_a["path"]
+    response = report_service.add(pytest.report_id, scenario_b_tests[1])
+    assert response.status_code == 204
 
-# def test_create_report():
-#     response = report_service.create(report)
-#     assert response.status_code == 201
-#     data = response.json()
-#     pytest.report_id = data["id"]
-#     assert data["id"]
-#
-# def test_verify_report_created():
-#     response = report_service.get(pytest.report_id)
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert data["_id"]
-#     assert data["tests"] == []
-#     assert data["created"]
-#     assert data["modified"]
-#     assert data["host"] == "Localhost"
-#     assert data["url"] == ""
-#     assert data["browser"] == "chrome"
-#     assert data["message"] == "Incomplete"
-#     assert data["fail"] == False
-#     assert data["errors"] == []
-#     assert data["kind"] == report["kind"]
-#     assert data["path"] == report["path"]
-#     assert data["content"] == []
-#
-# def test_verify_report_save():
-#     response = report_service.save(pytest.report_id, report_save)
-#     assert response.status_code == 204
-#
-# def test_verify_save_persists():
-#     response = report_service.get(pytest.report_id)
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert data["_id"]
-#     assert data["tests"] == []
-#     assert data["created"]
-#     assert data["modified"]
-#     assert data["created"] != data["modified"]
-#     assert data["host"] == report_save["host"]
-#     assert data["url"] == ""
-#     assert data["browser"] == report_save["browser"]
-#     assert data["message"] == "Incomplete"
-#     assert data["fail"] == report_save["fail"]
-#     assert data["errors"] == []
-#     assert data["kind"] == report["kind"]
-#     assert data["path"] == report["path"]
-#     assert data["content"] == []
-#
-# #
-# # Add a single scenario with subtests
-# #
-#
-# def test_add_scenario_1():
-#     response = report_service.add(pytest.report_id, scenario_1)
-#     assert response.status_code == 204
-#
-# def test_verify_added_scenario_1():
-#     response = report_service.get(pytest.report_id)
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert data["message"] == "Incomplete"
-#     assert len(data["tests"]) == 1
-#     assert data["tests"][0]["_type"] == scenario_1["_type"]
-#     assert data["tests"][0]["text"] == scenario_1["text"]
-#     assert data["tests"][0]["name"] == scenario_1["name"]
-#     assert data["tests"][0]["tests"] == scenario_1["tests"]
-#     assert data["tests"][0]["result"] == scenario_1["result"]
-#     assert data["tests"][0]["message"] == scenario_1["message"]
-#     assert data["tests"][0]["created"]
-#
-# def test_add_scenario_1_test_1():
-#     response = report_service.add(pytest.report_id, scenario_1_tests[0])
-#     assert response.status_code == 204
-#
-# def test_verify_added_scenario_1_test_1():
-#     response = report_service.get(pytest.report_id)
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert data["message"] == "Incomplete"
-#     assert len(data["tests"]) == 1
-#     assert len(data["tests"][0]["tests"]) == 1
-#     assert data["tests"][0]["result"] == scenario_1["result"]
-#     assert data["tests"][0]["message"] == scenario_1["message"]
-#     assert data["tests"][0]["tests"][0]["_type"] == scenario_1_tests[0]["_type"]
-#     assert data["tests"][0]["tests"][0]["result"] == scenario_1_tests[0]["result"]
-#     assert data["tests"][0]["tests"][0]["message"] == scenario_1_tests[0]["message"]
-#     assert data["tests"][0]["tests"][0]["scenarioId"] == scenario_1_tests[0]["scenarioId"]
-#     assert data["tests"][0]["tests"][0]["test"] == scenario_1_tests[0]["test"]
-#     assert data["tests"][0]["tests"][0]["text"] == scenario_1_tests[0]["text"]
-#
-# def test_add_scenario_1_test_2():
-#     response = report_service.add(pytest.report_id, scenario_1_tests[1])
-#     assert response.status_code == 204
-#
-# def test_verify_added_scenario_1_test_2():
-#     response = report_service.get(pytest.report_id)
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert data["message"] == "Incomplete"
-#     assert len(data["tests"]) == 1
-#     assert len(data["tests"][0]["tests"]) == 2
-#     assert data["tests"][0]["result"] == scenario_1["result"]
-#     assert data["tests"][0]["message"] == scenario_1["message"]
-#     assert data["tests"][0]["tests"][1]["_type"] == scenario_1_tests[1]["_type"]
-#     assert data["tests"][0]["tests"][1]["result"] == scenario_1_tests[1]["result"]
-#     assert data["tests"][0]["tests"][1]["message"] == scenario_1_tests[1]["message"]
-#     assert data["tests"][0]["tests"][1]["scenarioId"] == scenario_1_tests[1]["scenarioId"]
-#     assert data["tests"][0]["tests"][1]["test"] == scenario_1_tests[1]["test"]
-#     assert data["tests"][0]["tests"][1]["text"] == scenario_1_tests[1]["text"]
-#
-# def test_add_scenario_1_test_3():
-#     response = report_service.add(pytest.report_id, scenario_1_tests[2])
-#     assert response.status_code == 204
-#
-# def test_verify_added_scenario_1_test_3():
-#     response = report_service.get(pytest.report_id)
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert data["message"] == "Incomplete"
-#     assert len(data["tests"]) == 1
-#     assert len(data["tests"][0]["tests"]) == 3
-#     assert data["tests"][0]["result"] == scenario_1["result"]
-#     assert data["tests"][0]["message"] == scenario_1["message"]
-#     assert data["tests"][0]["tests"][2]["_type"] == scenario_1_tests[2]["_type"]
-#     assert data["tests"][0]["tests"][2]["result"] == scenario_1_tests[2]["result"]
-#     assert data["tests"][0]["tests"][2]["message"] == scenario_1_tests[2]["message"]
-#     assert data["tests"][0]["tests"][2]["scenarioId"] == scenario_1_tests[2]["scenarioId"]
-#     assert data["tests"][0]["tests"][2]["test"] == scenario_1_tests[2]["test"]
-#     assert data["tests"][0]["tests"][2]["text"] == scenario_1_tests[2]["text"]
-#
-# #
-# # Add a single scenario with subtests
-# #
-#
-# def test_add_scenario_2():
-#     response = report_service.add(pytest.report_id, scenario_2)
-#     assert response.status_code == 204
-#
-# def test_verify_added_scenario_2():
-#     response = report_service.get(pytest.report_id)
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert data["message"] == "Incomplete"
-#     assert len(data["tests"]) == 2
-#     assert data["tests"][1]["_type"] == scenario_2["_type"]
-#     assert data["tests"][1]["text"] == scenario_2["text"]
-#     assert data["tests"][1]["name"] == scenario_2["name"]
-#     assert data["tests"][1]["tests"] == scenario_2["tests"]
-#     assert data["tests"][1]["result"] == scenario_2["result"]
-#     assert data["tests"][1]["message"] == scenario_2["message"]
-#     assert data["tests"][1]["created"]
-#
-# def test_add_scenario_2_test_1():
-#     response = report_service.add(pytest.report_id, scenario_2_tests[0])
-#     assert response.status_code == 204
-#
-# def test_verify_added_scenario_2_test_1():
-#     response = report_service.get(pytest.report_id)
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert data["message"] == "Incomplete"
-#     assert len(data["tests"]) == 2
-#     assert len(data["tests"][1]["tests"]) == 1
-#     assert data["tests"][1]["result"] == scenario_2["result"]
-#     assert data["tests"][1]["message"] == scenario_2["message"]
-#     assert data["tests"][1]["tests"][0]["_type"] == scenario_2_tests[0]["_type"]
-#     assert data["tests"][1]["tests"][0]["result"] == scenario_2_tests[0]["result"]
-#     assert data["tests"][1]["tests"][0]["message"] == scenario_2_tests[0]["message"]
-#     assert data["tests"][1]["tests"][0]["scenarioId"] == scenario_2_tests[0]["scenarioId"]
-#     assert data["tests"][1]["tests"][0]["test"] == scenario_2_tests[0]["test"]
-#     assert data["tests"][1]["tests"][0]["text"] == scenario_2_tests[0]["text"]
-#
-# def test_add_scenario_2_test_2():
-#     response = report_service.add(pytest.report_id, scenario_2_tests[1])
-#     assert response.status_code == 204
-#
-# def test_verify_added_scenario_2_test_2():
-#     response = report_service.get(pytest.report_id)
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert data["message"] == "Incomplete"
-#     assert len(data["tests"]) == 2
-#     assert len(data["tests"][1]["tests"]) == 2
-#     assert data["tests"][1]["result"] == scenario_2["result"]
-#     assert data["tests"][1]["message"] == scenario_2["message"]
-#     assert data["tests"][1]["tests"][1]["_type"] == scenario_2_tests[1]["_type"]
-#     assert data["tests"][1]["tests"][1]["result"] == scenario_2_tests[1]["result"]
-#     assert data["tests"][1]["tests"][1]["message"] == scenario_2_tests[1]["message"]
-#     assert data["tests"][1]["tests"][1]["scenarioId"] == scenario_2_tests[1]["scenarioId"]
-#     assert data["tests"][1]["tests"][1]["test"] == scenario_2_tests[1]["test"]
-#     assert data["tests"][1]["tests"][1]["text"] == scenario_2_tests[1]["text"]
-#
-# def test_add_scenario_2_test_3():
-#     response = report_service.add(pytest.report_id, scenario_2_tests[2])
-#     assert response.status_code == 204
-#
-# def test_verify_added_scenario_2_test_3():
-#     response = report_service.get(pytest.report_id)
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert data["message"] == "Incomplete"
-#     assert len(data["tests"]) == 2
-#     assert len(data["tests"][1]["tests"]) == 3
-#     assert data["tests"][1]["result"] == scenario_2["result"]
-#     assert data["tests"][1]["message"] == scenario_2["message"]
-#     assert data["tests"][1]["tests"][2]["_type"] == scenario_2_tests[2]["_type"]
-#     assert data["tests"][1]["tests"][2]["result"] == scenario_2_tests[2]["result"]
-#     assert data["tests"][1]["tests"][2]["message"] == scenario_2_tests[2]["message"]
-#     assert data["tests"][1]["tests"][2]["scenarioId"] == scenario_2_tests[2]["scenarioId"]
-#     assert data["tests"][1]["tests"][2]["test"] == scenario_2_tests[2]["test"]
-#     assert data["tests"][1]["tests"][2]["text"] == scenario_2_tests[2]["text"]
-#
-# def test_finish_feature():
-#     response = report_service.finish(pytest.report_id)
-#     assert response.status_code == 204
-#
-# def test_verify_finish():
-#     response = report_service.get(pytest.report_id)
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert len(data["tests"]) == 2
-#     assert len(data["tests"][0]["tests"]) == 3
-#     assert len(data["tests"][1]["tests"]) == 3
-#     assert data["tests"][0]["result"] == scenario_1["result"]
-#     assert data["tests"][0]["message"] == scenario_1["message"]
-#     assert data["tests"][1]["result"] == scenario_2["result"]
-#     assert data["tests"][1]["message"] == scenario_2["message"]
-#     assert data["message"] == "Success"
-#     assert data["result"] == True
-#     assert data["end"]
-#     # verify final results
+    response = report_service.get(pytest.report_id)
+    assert response.status_code == 200
+    pytest.report = response.json()
+
+    assert pytest.report["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["result"] == None
+    assert pytest.report["tests"][1]["message"] == "Incomplete"
+    assert pytest.report["tests"][1]["result"] == None
+    assert pytest.report["tests"][2]["message"] == "Incomplete"
+    assert pytest.report["tests"][2]["result"] == None
+    assert len(pytest.report["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"]) == 0
+    assert len(pytest.report["tests"][2]["tests"]) == 0
+    assert len(pytest.report["tests"][0]["tests"][0]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][1]["tests"]) == 2
+
+    assert pytest.report["tests"][0]["tests"][1]["tests"][1]["path"] == scenario_b_tests[1]["path"]
+    assert pytest.report["tests"][0]["tests"][1]["tests"][1]["test"] == scenario_b_tests[1]["test"]
+    assert pytest.report["tests"][0]["tests"][1]["tests"][1]["text"] == scenario_b_tests[1]["text"]
+    assert pytest.report["tests"][0]["tests"][1]["tests"][1]["result"] == scenario_b_tests[1]["result"]
+    assert pytest.report["tests"][0]["tests"][1]["tests"][1]["message"] == scenario_b_tests[1]["message"]
+
+def test_add_scenario_a_feature_b():
+    """
+        Add scenario a to feature a
+        Verify it was added
+    """
+    scenario_a["path"] = feature_b["path"]
+    response = report_service.add(pytest.report_id, scenario_a)
+    assert response.status_code == 204
+
+    response = report_service.get(pytest.report_id)
+    assert response.status_code == 200
+    pytest.report = response.json()
+
+    assert pytest.report["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["result"] == None
+    assert pytest.report["tests"][1]["message"] == "Incomplete"
+    assert pytest.report["tests"][1]["result"] == None
+    assert pytest.report["tests"][2]["message"] == "Incomplete"
+    assert pytest.report["tests"][2]["result"] == None
+    assert len(pytest.report["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"]) == 1
+    assert len(pytest.report["tests"][2]["tests"]) == 0
+    assert len(pytest.report["tests"][0]["tests"][0]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][0]["tests"]) == 0
+
+    assert pytest.report["tests"][1]["tests"][0]["_type"] == scenario_a["_type"]
+    assert pytest.report["tests"][1]["tests"][0]["name"] == scenario_a["name"]
+    assert pytest.report["tests"][1]["tests"][0]["text"] == scenario_a["text"]
+    assert pytest.report["tests"][1]["tests"][0]["message"] == "Success"
+    assert pytest.report["tests"][1]["tests"][0]["result"] == True
+    assert pytest.report["tests"][1]["tests"][0]["tests"] == []
+
+def test_add_subtests_1_scenario_a_feature_b():
+    """
+        Add a test to scenario a within feature a
+        Verify the test has the correct attributes
+        Verify other features within the set
+    """
+    scenario_a_tests[0]["path"] = feature_b["path"]
+    response = report_service.add(pytest.report_id, scenario_a_tests[0])
+    assert response.status_code == 204
+
+    response = report_service.get(pytest.report_id)
+    assert response.status_code == 200
+    pytest.report = response.json()
+
+    assert pytest.report["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["result"] == None
+    assert pytest.report["tests"][1]["message"] == "Incomplete"
+    assert pytest.report["tests"][1]["result"] == None
+    assert pytest.report["tests"][2]["message"] == "Incomplete"
+    assert pytest.report["tests"][2]["result"] == None
+    assert len(pytest.report["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"]) == 1
+    assert len(pytest.report["tests"][2]["tests"]) == 0
+    assert len(pytest.report["tests"][0]["tests"][0]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][0]["tests"]) == 1
+
+    assert pytest.report["tests"][1]["tests"][0]["tests"][0]["path"] == scenario_a_tests[0]["path"]
+    assert pytest.report["tests"][1]["tests"][0]["tests"][0]["test"] == scenario_a_tests[0]["test"]
+    assert pytest.report["tests"][1]["tests"][0]["tests"][0]["text"] == scenario_a_tests[0]["text"]
+    assert pytest.report["tests"][1]["tests"][0]["tests"][0]["result"] == scenario_a_tests[0]["result"]
+    assert pytest.report["tests"][1]["tests"][0]["tests"][0]["message"] == scenario_a_tests[0]["message"]
+
+def test_add_subtests_2_scenario_a_feature_b():
+    """
+        Add a test to scenario a within feature a
+        Verify the test has the correct attributes
+        Verify other features within the set
+    """
+    scenario_a_tests[1]["path"] = feature_b["path"]
+    response = report_service.add(pytest.report_id, scenario_a_tests[1])
+    assert response.status_code == 204
+
+    response = report_service.get(pytest.report_id)
+    assert response.status_code == 200
+    pytest.report = response.json()
+
+    assert pytest.report["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["result"] == None
+    assert pytest.report["tests"][1]["message"] == "Incomplete"
+    assert pytest.report["tests"][1]["result"] == None
+    assert pytest.report["tests"][2]["message"] == "Incomplete"
+    assert pytest.report["tests"][2]["result"] == None
+    assert len(pytest.report["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"]) == 1
+    assert len(pytest.report["tests"][2]["tests"]) == 0
+    assert len(pytest.report["tests"][0]["tests"][0]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][0]["tests"]) == 2
+
+    assert pytest.report["tests"][1]["tests"][0]["tests"][1]["path"] == scenario_a_tests[1]["path"]
+    assert pytest.report["tests"][1]["tests"][0]["tests"][1]["test"] == scenario_a_tests[1]["test"]
+    assert pytest.report["tests"][1]["tests"][0]["tests"][1]["text"] == scenario_a_tests[1]["text"]
+    assert pytest.report["tests"][1]["tests"][0]["tests"][1]["result"] == scenario_a_tests[1]["result"]
+    assert pytest.report["tests"][1]["tests"][0]["tests"][1]["message"] == scenario_a_tests[1]["message"]
+
+def test_add_scenario_b_feature_b():
+    """
+        Add scenario a to feature a
+        Verify it was added
+    """
+    scenario_b["path"] = feature_b["path"]
+    response = report_service.add(pytest.report_id, scenario_b)
+    assert response.status_code == 204
+
+    response = report_service.get(pytest.report_id)
+    assert response.status_code == 200
+    pytest.report = response.json()
+
+    assert pytest.report["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["result"] == None
+    assert pytest.report["tests"][1]["message"] == "Incomplete"
+    assert pytest.report["tests"][1]["result"] == None
+    assert pytest.report["tests"][2]["message"] == "Incomplete"
+    assert pytest.report["tests"][2]["result"] == None
+    assert len(pytest.report["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][2]["tests"]) == 0
+    assert len(pytest.report["tests"][0]["tests"][0]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][1]["tests"]) == 0
+
+    assert pytest.report["tests"][1]["tests"][1]["_type"] == scenario_b["_type"]
+    assert pytest.report["tests"][1]["tests"][1]["name"] == scenario_b["name"]
+    assert pytest.report["tests"][1]["tests"][1]["text"] == scenario_b["text"]
+    assert pytest.report["tests"][1]["tests"][1]["message"] == scenario_b["message"]
+    assert pytest.report["tests"][1]["tests"][1]["result"] == True
+    assert pytest.report["tests"][1]["tests"][1]["tests"] == []
+
+def test_add_subtests_1_scenario_b_feature_b():
+    """
+        Add a test to scenario a within feature a
+        Verify the test has the correct attributes
+        Verify other features within the set
+    """
+    scenario_b_tests[0]["path"] = feature_b["path"]
+    response = report_service.add(pytest.report_id, scenario_b_tests[0])
+    assert response.status_code == 204
+
+    response = report_service.get(pytest.report_id)
+    assert response.status_code == 200
+    pytest.report = response.json()
+
+    assert pytest.report["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["result"] == None
+    assert pytest.report["tests"][1]["message"] == "Incomplete"
+    assert pytest.report["tests"][1]["result"] == None
+    assert pytest.report["tests"][2]["message"] == "Incomplete"
+    assert pytest.report["tests"][2]["result"] == None
+    assert len(pytest.report["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][2]["tests"]) == 0
+    assert len(pytest.report["tests"][0]["tests"][0]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][1]["tests"]) == 1
+
+    assert pytest.report["tests"][1]["tests"][1]["tests"][0]["path"] == scenario_b_tests[0]["path"]
+    assert pytest.report["tests"][1]["tests"][1]["tests"][0]["test"] == scenario_b_tests[0]["test"]
+    assert pytest.report["tests"][1]["tests"][1]["tests"][0]["text"] == scenario_b_tests[0]["text"]
+    assert pytest.report["tests"][1]["tests"][1]["tests"][0]["result"] == scenario_b_tests[0]["result"]
+    assert pytest.report["tests"][1]["tests"][1]["tests"][0]["message"] == scenario_b_tests[0]["message"]
+
+def test_add_subtests_2_scenario_b_feature_b():
+    """
+        Add a test to scenario a within feature a
+        Verify the test has the correct attributes
+        Verify other features within the set
+    """
+    scenario_b_tests[1]["path"] = feature_b["path"]
+    response = report_service.add(pytest.report_id, scenario_b_tests[1])
+    assert response.status_code == 204
+
+    response = report_service.get(pytest.report_id)
+    assert response.status_code == 200
+    pytest.report = response.json()
+
+    assert pytest.report["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["result"] == None
+    assert pytest.report["tests"][1]["message"] == "Incomplete"
+    assert pytest.report["tests"][1]["result"] == None
+    assert pytest.report["tests"][2]["message"] == "Incomplete"
+    assert pytest.report["tests"][2]["result"] == None
+    assert len(pytest.report["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][2]["tests"]) == 0
+    assert len(pytest.report["tests"][0]["tests"][0]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][1]["tests"]) == 2
+
+    assert pytest.report["tests"][1]["tests"][1]["tests"][1]["path"] == scenario_b_tests[1]["path"]
+    assert pytest.report["tests"][1]["tests"][1]["tests"][1]["test"] == scenario_b_tests[1]["test"]
+    assert pytest.report["tests"][1]["tests"][1]["tests"][1]["text"] == scenario_b_tests[1]["text"]
+    assert pytest.report["tests"][1]["tests"][1]["tests"][1]["result"] == scenario_b_tests[1]["result"]
+    assert pytest.report["tests"][1]["tests"][1]["tests"][1]["message"] == scenario_b_tests[1]["message"]
+
+def test_add_scenario_a_feature_c():
+    """
+        Add scenario a to feature a
+        Verify it was added
+    """
+    scenario_a["path"] = feature_c["path"]
+    response = report_service.add(pytest.report_id, scenario_a)
+    assert response.status_code == 204
+
+    response = report_service.get(pytest.report_id)
+    assert response.status_code == 200
+    pytest.report = response.json()
+
+    assert pytest.report["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["result"] == None
+    assert pytest.report["tests"][1]["message"] == "Incomplete"
+    assert pytest.report["tests"][1]["result"] == None
+    assert pytest.report["tests"][2]["message"] == "Incomplete"
+    assert pytest.report["tests"][2]["result"] == None
+    assert len(pytest.report["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][2]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][0]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][2]["tests"]) == 1
+    assert len(pytest.report["tests"][2]["tests"][0]["tests"]) == 0
+
+    assert pytest.report["tests"][2]["tests"][0]["_type"] == scenario_a["_type"]
+    assert pytest.report["tests"][2]["tests"][0]["name"] == scenario_a["name"]
+    assert pytest.report["tests"][2]["tests"][0]["text"] == scenario_a["text"]
+    assert pytest.report["tests"][2]["tests"][0]["message"] == "Success"
+    assert pytest.report["tests"][2]["tests"][0]["result"] == True
+    assert pytest.report["tests"][2]["tests"][0]["tests"] == []
+
+def test_finish_feature_a():
+    """
+        Finish Feature A
+    """
+    response = report_service.finish(pytest.report_id, feature_a["path"])
+    assert response.status_code == 204
+
+    response = report_service.get(pytest.report_id)
+    assert response.status_code == 200
+    pytest.report = response.json()
+
+    assert pytest.report["message"] == "Incomplete"
+    assert len(pytest.report["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][2]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][0]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][1]["tests"]) == 2
+
+    assert pytest.report["tests"][0]["end"]
+    assert pytest.report["tests"][0]["message"] == "Success"
+    assert pytest.report["tests"][0]["result"] == True
+
+    assert "end" not in pytest.report["tests"][1]
+    assert pytest.report["tests"][1]["result"] == None
+    assert pytest.report["tests"][1]["message"] == "Incomplete"
+
+    assert "end" not in pytest.report["tests"][2]
+    assert pytest.report["tests"][2]["result"] == None
+    assert pytest.report["tests"][2]["message"] == "Incomplete"
+
+def test_add_subtests_1_scenario_a_feature_c():
+    """
+        Add scenario a to feature a
+        Verify it was added
+    """
+    scenario_a_tests[0]["path"] = feature_c["path"]
+    response = report_service.add(pytest.report_id, scenario_a_tests[0])
+    assert response.status_code == 204
+
+    response = report_service.get(pytest.report_id)
+    assert response.status_code == 200
+    pytest.report = response.json()
+
+    assert pytest.report["message"] == "Incomplete"
+    assert pytest.report["tests"][0]["end"]
+    assert pytest.report["tests"][0]["message"] == "Success"
+    assert pytest.report["tests"][0]["result"] == True
+    assert pytest.report["tests"][1]["message"] == "Incomplete"
+    assert pytest.report["tests"][1]["result"] == None
+    assert pytest.report["tests"][2]["message"] == "Incomplete"
+    assert pytest.report["tests"][2]["result"] == None
+    assert len(pytest.report["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][2]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][0]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][2]["tests"]) == 1
+    assert len(pytest.report["tests"][2]["tests"][0]["tests"]) == 1
+
+    assert pytest.report["tests"][2]["tests"][0]["tests"][0]["path"] == scenario_a_tests[0]["path"]
+    assert pytest.report["tests"][2]["tests"][0]["tests"][0]["test"] == scenario_a_tests[0]["test"]
+    assert pytest.report["tests"][2]["tests"][0]["tests"][0]["text"] == scenario_a_tests[0]["text"]
+    assert pytest.report["tests"][2]["tests"][0]["tests"][0]["result"] == scenario_a_tests[0]["result"]
+    assert pytest.report["tests"][2]["tests"][0]["tests"][0]["message"] == scenario_a_tests[0]["message"]
+
+def test_finish_feature_b():
+    """
+        Finish Feature B
+    """
+    response = report_service.finish(pytest.report_id, feature_b["path"])
+    assert response.status_code == 204
+
+    response = report_service.get(pytest.report_id)
+    assert response.status_code == 200
+    pytest.report = response.json()
+
+    assert pytest.report["message"] == "Incomplete"
+    assert len(pytest.report["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][2]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][0]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][1]["tests"]) == 2
+
+    assert pytest.report["tests"][0]["end"]
+    assert pytest.report["tests"][0]["message"] == "Success"
+    assert pytest.report["tests"][0]["result"] == True
+
+    assert pytest.report["tests"][1]["end"]
+    assert pytest.report["tests"][1]["message"] == "Success"
+    assert pytest.report["tests"][1]["result"] == True
+
+    assert "end" not in pytest.report["tests"][2]
+    assert pytest.report["tests"][2]["result"] == None
+    assert pytest.report["tests"][2]["message"] == "Incomplete"
+
+def test_finish_feature_c():
+    """
+        Finish Feature C
+    """
+    response = report_service.finish(pytest.report_id, feature_c["path"])
+    assert response.status_code == 204
+
+    response = report_service.get(pytest.report_id)
+    assert response.status_code == 200
+    pytest.report = response.json()
+
+    assert pytest.report["message"] == "Success"
+    assert pytest.report["result"] == True
+    assert pytest.report["end"]
+    assert len(pytest.report["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][2]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][0]["tests"]) == 1
+    assert len(pytest.report["tests"][0]["tests"][1]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][0]["tests"]) == 2
+    assert len(pytest.report["tests"][1]["tests"][1]["tests"]) == 2
+
+    assert pytest.report["tests"][0]["end"]
+    assert pytest.report["tests"][0]["message"] == "Success"
+    assert pytest.report["tests"][0]["result"] == True
+
+    assert pytest.report["tests"][1]["end"]
+    assert pytest.report["tests"][1]["message"] == "Success"
+    assert pytest.report["tests"][1]["result"] == True
+
+    assert pytest.report["tests"][2]["end"]
+    assert pytest.report["tests"][2]["message"] == "Success"
+    assert pytest.report["tests"][2]["result"] == True
