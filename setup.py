@@ -4,12 +4,12 @@ setup(
     name = "honeypy_report",
     version = "0.1",
     description = "Honeypy Report Service",
-    url = "https://github.com/DevCoHealth/honeypy-report",
+    url = "https://bitbucket.org/Micerbeats/honeypy-report",
     author = "Micah Prescott",
-    author_email = "mprescott@sharecare.com",
+    author_email = "prescottmicah@gmail.com",
     packages = [
         "honeypy_report",
-        "tests"
+        "honeypy_report.tests",
     ],
     install_requires = [
         "certifi",

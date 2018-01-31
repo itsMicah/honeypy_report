@@ -1,75 +1,84 @@
-import json
-from bson import json_util
 from flask import Flask, Response
 from flask import request
 from flask_cors import CORS, cross_origin
-from os.path import dirname, abspath
 
 from honeypy_report.controller import ReportController
+from honeypy_report import report_api
+from honeypy.errors import CustomFileNotFound
+from honeypy.api.common import Common
+from mongoengine import *
+from flask_mongoengine import MongoEngine
+from bson.errors import InvalidId
 
-reportApi = Flask(__name__)
-CORS(reportApi, resources={r'\/report\/?.*': {'origins': 'http://localhost:4200'}})
+"""
+    Configure service
+"""
+report_api.config['MONGODB_SETTINGS'] = {
+    'db': report_api.config["REPORT_DB"],
+    'host': report_api.config["DATABASE_IP"],
+    'port': report_api.config["DATABASE_PORT"]
+}
+db = MongoEngine()
+db.init_app(report_api)
+common = Common()
+CORS(report_api, resources={r'\/report\/?.*': {'origins': 'http://localhost:4200'}})
 
-reportApi.config.from_object('honeypy_report.configs.development')
-reportApi.config.from_envvar('honeypyReportEnvironment', silent = True)
-reportController = ReportController(config = reportApi.config)
+@report_api.route("/report", methods = ["POST"])
+def post_report():
+    try:
+        data = request.get_json()
+        return ReportController().create(data)
+    except (OperationError, InvalidQueryError, FieldDoesNotExist) as error:
+        return common.error(error)
+    except CustomFileNotFound as error:
+        return common.create_response(404, {"errors":{"path": "File not found"}})
 
-def createResponse(data):
-    response = {
-        "data":data["data"],
-        "errors":data["errors"],
-        "result":data["result"]
-    }
-    return Response(
-        response=json.dumps(response),
-        status=data["status"],
-        mimetype="application/json"
-    )
+@report_api.route("/report/<report_id>", methods = ["GET"])
+def get_report(report_id):
+    """
+        Get a host by name
+    """
+    try:
+        return ReportController().get(report_id)
+    except (DoesNotExist, ValidationError) as error:
+        return common.error(error)
 
-@reportApi.route("/report", methods = ["POST"])
-def postReport():
-    data = request.get_json()
-    response = ReportController().createReport(data)
-    return createResponse(response)
+@report_api.route("/report/<report_id>", methods = ["PATCH"])
+def patch_report(report_id):
+    try:
+        data = request.get_json()
+        return ReportController().save(report_id, data)
+    except (ValidationError, OperationError, InvalidQueryError, FieldDoesNotExist, InvalidId) as error:
+        return common.error(error)
 
-@reportApi.route("/report/<reportId>", methods = ["GET"])
-def getReport(reportId):
-    response = ReportController(reportId).getReport()
-    return createResponse(response)
+@report_api.route("/report/<report_id>/add", methods = ["POST"])
+def add_test(report_id):
+    try:
+        data = request.get_json()
+        return ReportController().add(report_id, data)
+    except (OperationError, InvalidQueryError, FieldDoesNotExist, InvalidId, ValidationError) as error:
+        return common.error(error)
 
-@reportApi.route("/report/search", methods = ["POST"])
-def getReportsByDate():
-    data = request.get_json()
-    results = ReportController().getReportsByDate(data)
-    return createResponse(results)
-
-@reportApi.route("/report/<reportId>", methods = ["PATCH"])
-def patchReport(reportId):
-    data = request.get_json()
-    results = ReportController(reportId).patchReport(data)
-    return createResponse(results)
-
-@reportApi.route("/report/<reportId>/add", methods = ["PATCH"])
-def addToReport(reportId):
-    data = request.get_json()
-    response = ReportController(reportId).addReport(data)
-    return createResponse(response)
-
-@reportApi.route("/report/<reportId>/finish", methods = ["GET"])
-def finishReport(reportId):
-    test = request.args.get('test')
-    response = ReportController(reportId, test).finished()
-    return createResponse(response)
-
-@reportApi.route("/report/<reportId>", methods = ["DELETE"])
-def deleteReport(reportId):
-    response = ReportController(reportId).deleteReport()
-    return createResponse(response)
+# @report_api.route("/report/search", methods = ["POST"])
+# def getReportsByDate():
+#     try:
+#         data = request.get_json()
+#         results = ReportController().getReportsByDate(data)
+#         return createResponse(results)
+#     except ValidationError as error:
+#         return common.validation_error(error)
+#
+#
+@report_api.route("/report/<report_id>/finish", methods = ["GET"])
+def finish(report_id):
+    path = request.args.get('path')
+    return ReportController().finish(report_id, path)
+#
+# @report_api.route("/report/<reportId>", methods = ["DELETE"])
+# def deleteReport(reportId):
+#     response = ReportController(reportId).deleteReport()
+#     return createResponse(response)
 
 
 def main():
-    reportApi.run(host=reportApi.config["IP"], port=reportApi.config["PORT"], threaded=True)
-
-# Run service
-if __name__ == "__main__":
-    main()
+    report_api.run(host=report_api.config["REPORT_IP"], port=report_api.config["REPORT_PORT"], threaded=True)

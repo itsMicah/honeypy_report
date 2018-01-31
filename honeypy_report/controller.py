@@ -1,375 +1,223 @@
-import time, json, requests
-from honeypy.db import DatabaseController as db
+import time, json, pymongo, re, datetime
+from pymongo import MongoClient
+from flask import Flask
+from honeypy.api.test import TestService
+from honeypy.api.set import SetService
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
+from mongoengine import *
+from honeypy.errors import CustomFileNotFound
+
+from honeypy_report import report_api
+from honeypy.api.common import Common
+from honeypy_report.models import FeatureReport, SetReport, Report, Test, Scenario, Step
 
 class ReportController(object):
-    def __init__(self, reportId = None, test = None, config = None):
-        self.config = config
-        self.db = db("ReportDB", "report_collection", ip = config["DATABASE_URL"], port = config["DATABASE_PORT"])
-        self.reportId = reportId
-        self.test = test
+
+    def __init__(self):
+        self.config = report_api.config
+        self.common = Common()
         self.ifFinish = False
+        self.initiate_db()
 
-    def response(self, **kwargs):
-        if "status" not in kwargs:
-            return
-        if "data" not in kwargs:
-            kwargs["data"] = None
-        if "result" not in kwargs:
-            if "errors" in kwargs:
-                kwargs["result"] = "failure"
-            else:
-                kwargs["result"] = "success"
-        if "errors" not in kwargs:
-            kwargs["errors"] = None
-        return {
-            "result":kwargs["result"],
-            "status":kwargs["status"],
-            "data":kwargs["data"],
-            "errors":kwargs["errors"]
-        }
+    def initiate_db(self):
+        """
+            Start database session
+        """
+        uri = 'mongodb://' + self.config['DATABASE_IP'] + ':' + str(self.config['DATABASE_PORT'])
+        client = MongoClient(uri)
+        db = client[self.config['REPORT_DB']]
+        self.collection = db[self.config['REPORT_DB']]
 
-    def createReport(self, data):
-        if data["type"] == "test":
-            return self.createTestReport(data)
-        elif data["type"] == "set":
-            return self.createSetReport(data)
+    def check_kind(self, data):
+        """
+            Check if kind field is present in payload
+        """
+        if not "kind" in data or not data["kind"]:
+            raise ValidationError(errors = {"kind": "Please provide a valid 'kind' ['set', 'feature']"})
 
-    def createTestReport(self, data):
-        data["type"] = "test"
-        report = {"properties":data, "tests":[]}
-        result = self.validateReport(report)
-        if result:
-            return result
-        report = self.setTime(report)
-        reportId = self.db.add(report)
-        return self.response(data = str(reportId), status = 201)
+    def get(self, report_id):
+        """
+            Get a report by ID and kind
 
-    def createSetReport(self, data):
-        self.setObject = data
-        self.setObject["type"] = "set"
-        _set = {"properties":self.setObject,"tests":[]}
-        for test in data["tests"]:
-            index = data["tests"].index(test)
-            properties = self.generateTestProperties(test, index)
-            _set["tests"].append({"properties":properties, "tests":[]})
-        _set = self.setTime(_set)
-        reportId = self.db.add(_set)
-        return self.response(data = str(reportId), status = 201)
+            :kind: the type of report
+            :report_id: the id of the requested report
+        """
+        response = Report.objects(id=report_id).get().to_json()
+        return self.common.create_response(200, response)
 
-    def generateTestProperties(self, path, index):
-        test = {
-            "path":path,
-            "time":str(round(int(time.time() * 1000))),
-            "type":"test",
-            "index":index,
-            "set":True,
-            "id":str(ObjectId())
-        }
-        response = self.getTestProperties(path)
-        data = response["properties"]
-        data.update(test)
-        if self.setObject["inherit"] == True:
-            data.update({
-                "url":self.setObject["url"],
-                "browser":self.setObject["browser"],
-                "host":self.setObject["host"],
-                "setName":self.setObject["name"],
-            })
-        test = data
-        return test
+    def create(self, data):
+        """
+            Create a feature/set report
 
-    def getTestProperties(self, path):
-        response = requests.get("http://localhost:30001/tests?path=" + path)
-        return response.json()["data"]
+            :data: the request payload
+        """
+        self.check_kind(data)
+        data = self.common.clean(data)
+        report = None
+        if data["kind"] == "feature":
+            report = self.create_feature_report(data)
+            return self.common.create_response(201, json.dumps({"id":str(report.id)}))
+        elif data["kind"] == "set":
+            report = self.create_set_report(data)
+            return self.common.create_response(201, json.dumps({"id":str(report.id)}))
 
-    def validateReport(self, report):
-        if "type" in report["properties"]:
-            if report["properties"]["type"] == "set":
-                result = self.validateSetReport(report)
-                if result:
-                    return result
-            else:
-                result = self.validateTestReport(report)
-                if result:
-                    return result
-        else:
-            return self.response(errors = "Please specify whether this is a test or a set", status = 400)
+    def create_feature_report(self, data):
+        response = TestService().get(data["path"], "feature")
+        if response.status_code == 200:
+            data["setId"] = None
+            data["message"] = "Incomplete"
+            report = FeatureReport(**data)
+            report.save()
+            return report
+        elif response.status_code == 404:
+            raise CustomFileNotFound()
 
-    def validateTestReport(self, report):
-        if "path" not in report["properties"] or not report["properties"]["path"]:
-            return self.response(errors = "Please provide a valid test path", status = 400)
-        if "name" not in report["properties"] or not report["properties"]["name"]:
-            return self.response(errors = "Please provide a valid test name", status = 400)
-        if "content" not in report["properties"] or not report["properties"]["content"]:
-            return self.response(errors = "Test must contain content", status = 400)
-        if "url" not in report["properties"]:
-            return self.response(errors = "Please provide a valid URL", status = 400)
-        if "browser" not in report["properties"] or not report["properties"]["browser"]:
-            return self.response(errors = "Please provider a browser", status = 400)
-        if "host" not in report["properties"] or not report["properties"]["host"]:
-            return self.response(errors = "Please provide a host", status = 400)
-
-    def validateSetReport(self, report):
-        if "tests" not in report["properties"] or not report["properties"]["tests"]:
-            return self.response(errors = "Set must contain tests", status = 400)
-        if "name" not in report["properties"] or not report["properties"]["name"]:
-            return self.response(errors = "Set must have a name", status = 400)
-        if "host" not in report["properties"] or not report["properties"]["host"]:
-            return self.response(errors = "Please provide a host", status = 400)
-        try:
-            if report["properties"]["inherit"] == True:
-                if "url" not in report["properties"] or not report["properties"]["url"]:
-                    return self.response(errors = "Please provide a valid URL", status = 400)
-                if "browser" not in report["properties"] or not report["properties"]["browser"]:
-                    return self.response(errors = "Please provider a browser", status = 400)
-        except KeyError:
-            pass
-
-    def setTime(self, report):
-        report["properties"]["date"] = time.strftime("%m%d%y")
-        report["properties"]["time"] = str(round(int(time.time() * 1000)))
+    def create_set_report(self, data):
+        """
+            Create a set report
+        """
+        response = SetService().get(data["name"])
+        _set = response.json()
+        _set["tests"] = []
+        _set["errors"] = []
+        _set = self.common.clean(_set)
+        _set["message"] = "Incomplete"
+        _set["result"] = None
+        report = SetReport(**_set).save()
+        self.append_set_tests(report, _set)
         return report
 
-    def parseObjectIds(self, data):
-        if "_id" in data:
-            data["_id"] = str(data["_id"])
-        if "properties" in data:
-            if "_id" in data["properties"]:
-                data["properties"]["_id"] = str(data["properties"]["_id"])
-            if "type" in data["properties"]:
-                if data["properties"]["type"] == "set":
-                    for test in data["tests"]:
-                        index = data["tests"].index(test)
-                        if data["tests"][index]["properties"]:
-                            if "id" in data["tests"][index]["properties"]:
-                                data["tests"][index]["properties"]["id"] = str(data["tests"][index]["properties"]["id"])
-        return data
+    def append_set_tests(self, report, data):
+        """
+            Populate set report with sub feature reports
 
-    def getReport(self):
-        try:
-            report = self.db.getData({"_id":ObjectId(self.reportId)}, False)
-            if not report:
-                return self.response(errors = "Unable to find report", status = 404)
-            report = self.cleanObjectId(report)
-            return self.response(data = report, status = 200)
-        except InvalidId:
-            return self.response(errors = "Unable to find report", status = 404)
+            :report: the report object
+            :data: the data to push to the report object
+        """
+        for path in data["features"]:
+            response = TestService().get(path, "feature")
+            if response.status_code == 404:
+                SetReport.objects(id = report.id).update_one(push__errors=f"'{path}' does not exist")
+                SetReport.objects(id = report.id).update_one(pull__features=path)
+            elif response.status_code == 200:
+                feature = response.json()
+                feature = self.common.clean(feature)
+                feature["tests"] = []
+                feature["result"] = None
+                feature["setId"] = report.id
+                feature["message"] = "Incomplete"
+                if data["inherit"] == True:
+                    feature["browser"] = data["browser"]
+                    feature["url"] = data["url"]
+                    feature["host"] = data["host"]
+                SetReport.objects(id = report.id).update_one(push__tests=feature)
 
-    def getReportsByDate(self, search):
-        result = self.validateSearchByDate(search)
-        if result:
-            return result
-        results = None
-        if search["type"] == "set":
-            results = self.db.getData({"properties.type":"set", "properties.name":search["set"], "properties.time": {"$lte":search["max"], "$gte":search["min"]} })
-        else:
-            results = self.db.getData({"properties.time": {"$lte":search["max"], "$gte":search["min"]} })
-        results = self.cleanseCursorObject(results)
-        return self.response(data = results, status = 200)
+    def save(self, report_id, data):
+        """
+            Save to a report
+        """
+        self.check_kind(data)
+        data = self.common.pre_save_document(data)
+        Report.objects(id = report_id).modify(set__modified = datetime.datetime.now)
+        Report.objects(id = report_id).update_one(**data)
+        return self.common.create_response(204)
 
-    def searchSetReports(self, search):
-        results = self.db.getData({"properties.time": {"$lte":search["max"], "$gte":search["min"]} })
+    def add(self, report_id, data):
+        """
+            Add to report
+        """
+        self.verify_add(data)
+        kind = data["kind"]
+        data.pop("kind", None)
+        if data["result"] == False:
+            Report.objects(id = report_id).update_one(set__result = data["result"], set__message = "Failure")
+        if "scenarioId" in data:
+            if type(data["scenarioId"]) != str:
+                data["scenarioId"] = ObjectId(data["scenarioId"])
+        Report.objects(id = report_id).modify(set__modified = datetime.datetime.now)
+        if kind == "feature":
+            self.add_to_feature(report_id, data)
+        elif kind == "set":
+            self.add_to_set(report_id, data)
+        return self.common.create_response(204)
 
-    def validateSearchByDate(self, search):
-        if "min" not in search or not search["min"]:
-            return self.response(errors = "Please provide a minimum timestamp", status = 400)
-        if "max" not in search or not search["max"]:
-            return self.response(errors = "Please provide a maximium timestamp", status = 400)
-        if "type" not in search or not search["type"]:
-            return self.response(errors = "Please a search type", status = 400)
+    def verify_add(self, data):
+        if not "kind" in data or not data["kind"] or not re.match(r"(feature|set)", data["kind"]):
+            raise ValidationError(errors = {"kind": "Please provide a valid 'kind' ['set', 'feature']"})
+        if not "_type" in data or not data["_type"] or not re.match(r"(scenario|test)", data["_type"]):
+            raise ValidationError(errors = {"_type": "Please provide a valid '_type' ['test', 'scenario']"})
 
-    def cleanseCursorObject(self, data):
-        node = []
-        for item in data:
-            item = self.cleanObjectId(item)
-            node.append(item)
-        return node
+    def add_to_feature(self, report_id, data):
+        data.pop("path", None)
+        if data["_type"] == "test" and not "scenarioId" in data:
+            FeatureReport.objects(id = report_id).modify(push__tests=Step(**data))
+        elif data["_type"] == "scenario" and "scenarioId" in data:
+            FeatureReport.objects(id = report_id).modify(push__tests=Scenario(**data))
+        elif data["_type"] == "test" and data["scenarioId"]:
+            if data["result"] == False:
+                self.collection.update_one({ "_id": ObjectId(report_id), "tests": {"$elemMatch": {"scenarioId": ObjectId(data["scenarioId"])}}}, {'$set': {'tests.$.result':data["result"], 'tests.$.message':"Failure", 'result':data["result"], 'message':"Failure"}})
+            self.collection.update_one({ "_id": ObjectId(report_id), "tests": {"$elemMatch": {"scenarioId": ObjectId(data["scenarioId"])}}}, {'$push': {'tests.$.tests':data}})
 
-    def cleanObjectId(self, node):
-        if "_id" in node:
-            node["_id"] = str(node["_id"])
-        return node
+    def add_to_set(self, report_id, data):
+        self.verify_set_add(data)
+        Report.objects(id = report_id).update_one(set__modified = datetime.datetime.now())
+        if data["_type"] == "test" and not "scenarioId" in data:
+            if data["result"] == False:
+                result = self.collection.update_one({ "_id": ObjectId(report_id) }, {'$set': {'message':"Failure", 'result':data["result"]}})
+            result = self.collection.update_one({ "_id": ObjectId(report_id), "tests": {"$elemMatch": {"path": data["path"]}} }, {'$push': {'tests.$.tests':data}})
+        elif data["_type"] == "scenario" and "scenarioId" in data:
+            result = self.collection.update_one({ "_id": ObjectId(report_id), "tests": {"$elemMatch": {"path": data["path"]}} }, {'$push': {'tests.$.tests':data}})
+            if data["result"] == False:
+                result = self.collection.update_one({ "_id": ObjectId(report_id) }, {'$set': {'message':"Failure", 'result':data["result"]}})
+                result = self.collection.update_one({ "_id": ObjectId(report_id), "tests": {"$elemMatch": {"scenarioId": ObjectId(data["scenarioId"])}}}, {'$set': {'tests.$.result':data["result"]}, '$set': {'tests.$.message':"Failure"}})
+        elif data["_type"] == "test" and data["scenarioId"]:
+            if data["result"] == False:
+                result = self.collection.update_one({ "_id": ObjectId(report_id) }, {'$set': {'message':"Failure", 'result':data["result"]}})
+                result = self.collection.update_one({ "_id": ObjectId(report_id) }, {'$set': {'tests.$[a].tests.$[b].message':data["message"], 'tests.$[a].tests.$[b].result':data["result"]}}, array_filters=[{"a.path":data["path"]}, {"b.scenarioId":data["scenarioId"]}])
+                result = self.collection.update_one({ "_id": ObjectId(report_id), "tests": {"$elemMatch": {"path": data["path"]}}}, {'$set': {'tests.$.result':data["result"], 'tests.$.message':"Failure"}})
+            result = self.collection.update_one({ "_id": ObjectId(report_id) }, {'$push': {'tests.$[a].tests.$[b].tests':data}}, array_filters=[{"a.path":data["path"]}, {"b.scenarioId":data["scenarioId"]}])
 
-    def patchReport(self, data):
-        _filter = {"_id":ObjectId(self.reportId)}
-        data = self.db.patch(data, _filter)
-        return data
 
-    def extendArray(self, data):
-        _filter = {"_id":ObjectId(self.reportId)}
-        data = self.db.extendArray(data, _filter)
-        if data["_id"]:
-            data["_id"] = str(data["_id"])
-        return data
+    def verify_set_add(self, data):
+        if not "path" in data or not data["path"]:
+            raise ValidationError(errors = {"path": "Please provide a valid path to add append a report"})
 
-    def putReport(self, data):
-        data = self.db.edit(data, {"_id":ObjectId(self.reportId)})
-        return data
+    def finish(self, report_id, path, result = True, message = "Success"):
+        report = json.loads(Report.objects(id=report_id).get().to_json())
+        if report["kind"] == "feature":
+            result, message = self.finish_feature_report(report, result, message)
+            self.final_finish(report_id, result, message)
+            return self.common.create_response(204)
+        elif report["kind"] == "set":
+            finished = True
+            if not path in report["features"]:
+                raise ValidationError(errors = {"path":"Path does not exist in the set"})
+            for test in report["tests"]:
+                if test["path"] == path:
+                    result, message = self.finish_feature_report(test, result, message)
+                    self.collection.update_one({ "_id": ObjectId(report_id), "tests": {"$elemMatch": {"path": path}}}, {'$set': {'tests.$.result':result, 'tests.$.message':message, 'tests.$.end':datetime.datetime.now()}})
+            self.finish_set(report_id)
+            return self.common.create_response(204)
 
-    def deleteReport(self):
-        try:
-            result = self.checkReport()
-            if result:
-                return result
-            self.db.delete({"_id":ObjectId(self.reportId)})
-            return self.response(status = 204)
-        except InvalidId:
-            return self.response(errors = "Unable to find report", status = 404)
-
-    def validateAddReport(self, data):
-        if "test" not in data or not data["test"]:
-            return self.response(errors = "Please provide a test to add to the report", status = 400)
-        if not "type" in data["properties"] or not data["properties"]["type"]:
-            data["properties"]["type"] = "test"
-        if data["properties"]["set"]:
-            if "index" not in data["properties"]:
-                return self.response(errors = "Please provide an index", status = 400)
-        return self.checkReport()
-
-    def addReport(self, data):
-        result = self.validateAddReport(data)
-        if result:
-            return result
-        test = data["test"]
-        _type = self.ifTestinSet(data)
-        index = data["properties"]["index"]
-        if _type:
-            self.addTestToSet(test, index)
-        else:
-            self.addTest(test)
-        return self.response(status = 201)
-
-    def ifTestinSet(self, data):
-        if "set" in  data["properties"]:
-            return data["properties"]["set"]
-        else:
-            return False
-
-    def checkReport(self):
-        report = self.db.getData({"_id":ObjectId(self.reportId)}, False)
-        if not report:
-            return self.response(errors = "Unable to find report", status = 404)
-
-    def addTestToSet(self, test, index):
-            if "scenarioId" in test:
-                if test["scenarioId"]:
-                    report = self.getReport()
-                    for line in report["tests"][index]["tests"]:
-                        if line["type"] == "scenario":
-                            if line["id"] == test["scenarioId"]:
-                                lineIndex = report["tests"][index]["tests"].index(line)
-                                self.extendArray({"tests." + str(index) + ".tests." + str(lineIndex) + ".tests":test})
-                else:
-                    self.extendArray({"tests." + str(index) + ".tests":test})
-            else:
-                self.extendArray({"tests." + str(index) + ".tests":test})
-
-    def addTest(self, test):
-            try:
-                if test["scenarioId"]:
-                    report = self.db.getData({"_id":ObjectId(self.reportId)}, False)
-                    report = self.cleanObjectId(report)
-                    for line in report["tests"]:
-                        if line["type"] == "scenario":
-                            if line["id"] == test["scenarioId"]:
-                                lineIndex = report["tests"].index(line)
-                                self.extendArray({"tests." + str(lineIndex) + ".tests":test})
-                else:
-                    self.extendArray({"tests":test})
-            except KeyError:
-                self.extendArray({"tests":test})
-
-    def finished(self):
-        report = self.db.getData({"_id":ObjectId(self.reportId)}, False)
-        if report["properties"]["type"] == "set":
-            return self.finishSet(report)
-        else:
-            return self.checkTestStatus(report)
-
-    def finishSet(self, report):
-        report["_id"] = ObjectId(report["_id"])
-        report["properties"]["_id"] = ObjectId(report["properties"]["_id"])
-        return self.checkSetStatus(report)
-
-    def checkIfSetFinished(self, report = None):
-        if report == None:
-             report = self.getReport()["data"]
-        self.ifFinish = True
+    def finish_feature_report(self, report, result = True, message = "Success"):
         for test in report["tests"]:
-            if "end" not in test["properties"]:
-                self.ifFinish = False
-        if self.ifFinish == True:
-            currentTime = str(round(int(time.time() * 1000)))
-            self.patchReport({"properties.end":currentTime})
+            if not "result" in test or test["result"] == False:
+                result = False
+                message = "Failure"
+                break
+        return result, message
 
-    def checkSetStatus(self, report):
-        totalResult = True
-        totalMessage = "Success"
-        for test in report["tests"]:
-            index = report["tests"].index(test)
-            self.checkTestStatus(test, index)
-            if test["properties"]["result"] == False:
-                totalResult = False
-                totalMessage = "Failure"
-            report["tests"][index] = test
-        self.patchReport({"properties.result":totalResult})
-        self.patchReport({"properties.message":totalMessage})
-        return self.response(status = 204)
+    def final_finish(self, report_id, result, message):
+        Report.objects(id = report_id).modify(set__end = datetime.datetime.now(), set__modified = datetime.datetime.now(), set__result = result, set__message = message)
 
-    def checkTestStatus(self, test, testIndex = None):
-        totalResult = True
-        totalMessage = "Success"
-        for subTest in test["tests"]:
-            index = test["tests"].index(subTest)
-            subTest = self.checkScenarioStatus(subTest, index, testIndex)
-            # CHECK IF JS
-            if "result" in subTest:
-                if subTest["result"] == False:
-                    totalResult = False
-                    totalMessage = "Failure"
-            test["tests"][index] = subTest
-        if testIndex != None:
-            self.patchReport({"tests." + str(testIndex) + ".properties.result":totalResult})
-            self.patchReport({"tests." + str(testIndex) + ".properties.message":totalMessage})
-        else:
-            self.patchReport({"properties.result":totalResult})
-            self.patchReport({"properties.message":totalMessage})
-        test["properties"]["result"] = totalResult
-        test["properties"]["message"] = totalMessage
-        if self.test == test["properties"]["path"]:
-            self.endTest(testIndex)
-        elif test["properties"]["type"] == "test":
-            self.endTest()
-        return self.response(status = 204)
-
-    def checkScenarioStatus(self, subTest, subTestIndex, testIndex = None):
-        if subTest["type"] == "scenario":
-            totalResult = True
-            totalMessage = "Success"
-            scenarioTestIndex = None
-            for test in subTest["tests"]:
-                scenarioTestIndex = subTest["tests"].index(test)
-                try:
-                    if test["result"] == False:
-                        totalResult = False
-                        totalMessage = "Failure"
-                except:
-                    pass
-            if scenarioTestIndex != None and testIndex != None:
-                self.patchReport({"tests." + str(testIndex) + ".tests." + str(subTestIndex) + ".result":totalResult})
-                self.patchReport({"tests." + str(testIndex) + ".tests." + str(subTestIndex) + ".message":totalMessage})
-            if testIndex == None:
-                self.patchReport({"tests." + str(subTestIndex) + ".result":totalResult})
-                self.patchReport({"tests." + str(subTestIndex) + ".message":totalMessage})
-            subTest["result"] = totalResult
-            subTest["message"] = totalMessage
-        return subTest
-
-    def endTest(self, index = None):
-        if index != None:
-            response = self.patchReport({"tests." + str(index) + ".properties.end":str(round(int(time.time() * 1000)))})
-            self.checkIfSetFinished()
-        else:
-            response = self.patchReport({"properties.end":str(round(int(time.time() * 1000)))})
+    def finish_set(self, report_id):
+        report = json.loads(Report.objects(id=report_id).get().to_json())
+        finished = True
+        for feature in report["tests"]:
+            if not "end" in feature:
+                finished = False
+                break
+        if finished == True:
+            result, message = self.finish_feature_report(report)
+            Report.objects(id = report_id).update_one(set__end = datetime.datetime.now(), set__modified = datetime.datetime.now(), set__result = result, set__message = message)
