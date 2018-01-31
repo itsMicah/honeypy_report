@@ -104,11 +104,17 @@ scenario_2_tests = [
 ]
 
 def test_setup_data():
+    """
+        Setup test feature
+    """
     test_service.delete(feature["path"], "feature")
     response = test_service.create(feature)
     assert response.status_code == 201
 
 def test_create_report():
+    """
+        Create a report with the feature
+    """
     response = report_service.create(report)
     assert response.status_code == 201
     data = response.json()
@@ -116,6 +122,9 @@ def test_create_report():
     assert data["id"]
 
 def test_verify_report_created():
+    """
+        Verify the report has the correct attributes
+    """
     response = report_service.get(pytest.report_id)
     assert response.status_code == 200
     data = response.json()
@@ -134,10 +143,16 @@ def test_verify_report_created():
     assert data["content"] == []
 
 def test_verify_report_save():
+    """
+        Save the report with updated attributes
+    """
     response = report_service.save(pytest.report_id, report_save)
     assert response.status_code == 204
 
 def test_verify_save_persists():
+    """
+        Verify the saved report
+    """
     response = report_service.get(pytest.report_id)
     assert response.status_code == 200
     data = response.json()
@@ -156,15 +171,17 @@ def test_verify_save_persists():
     assert data["path"] == report["path"]
     assert data["content"] == []
 
-#
-# Add a single scenario with subtests
-#
-
 def test_add_scenario_1():
+    """
+        Add a single scenario to the report
+    """
     response = report_service.add(pytest.report_id, scenario_1)
     assert response.status_code == 204
 
 def test_verify_added_scenario_1():
+    """
+        Verify the scenario was added to the report
+    """
     response = report_service.get(pytest.report_id)
     assert response.status_code == 200
     data = response.json()
@@ -179,10 +196,16 @@ def test_verify_added_scenario_1():
     assert data["tests"][0]["created"]
 
 def test_add_scenario_1_test_1():
+    """
+        Add a test to the first scenario
+    """
     response = report_service.add(pytest.report_id, scenario_1_tests[0])
     assert response.status_code == 204
 
 def test_verify_added_scenario_1_test_1():
+    """
+        Verify the added subtest
+    """
     response = report_service.get(pytest.report_id)
     assert response.status_code == 200
     data = response.json()
@@ -199,10 +222,16 @@ def test_verify_added_scenario_1_test_1():
     assert data["tests"][0]["tests"][0]["text"] == scenario_1_tests[0]["text"]
 
 def test_add_scenario_1_test_2():
+    """
+        Add another subtest to the first scenario
+    """
     response = report_service.add(pytest.report_id, scenario_1_tests[1])
     assert response.status_code == 204
 
 def test_verify_added_scenario_1_test_2():
+    """
+        Verify the added subtest
+    """
     response = report_service.get(pytest.report_id)
     assert response.status_code == 200
     data = response.json()
@@ -219,10 +248,16 @@ def test_verify_added_scenario_1_test_2():
     assert data["tests"][0]["tests"][1]["text"] == scenario_1_tests[1]["text"]
 
 def test_add_scenario_1_test_3():
+    """
+        Add another subtest to the scenario
+    """
     response = report_service.add(pytest.report_id, scenario_1_tests[2])
     assert response.status_code == 204
 
 def test_verify_added_scenario_1_test_3():
+    """
+        Verify the added subtest
+    """
     response = report_service.get(pytest.report_id)
     assert response.status_code == 200
     data = response.json()
@@ -238,15 +273,17 @@ def test_verify_added_scenario_1_test_3():
     assert data["tests"][0]["tests"][2]["test"] == scenario_1_tests[2]["test"]
     assert data["tests"][0]["tests"][2]["text"] == scenario_1_tests[2]["text"]
 
-#
-# Add a single scenario with subtests
-#
-
 def test_add_scenario_2():
+    """
+        Add a second scenario
+    """
     response = report_service.add(pytest.report_id, scenario_2)
     assert response.status_code == 204
 
 def test_verify_added_scenario_2():
+    """
+        Verify the added scenario
+    """
     response = report_service.get(pytest.report_id)
     assert response.status_code == 200
     data = response.json()
