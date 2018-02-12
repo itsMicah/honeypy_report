@@ -1,4 +1,5 @@
 import time, json, pymongo, re, datetime
+from cerberus import Validator
 from pymongo import MongoClient
 from flask import Flask
 from honeypy.api.test import TestService
@@ -6,10 +7,11 @@ from honeypy.api.set import SetService
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
 from mongoengine import *
-from honeypy.errors import CustomFileNotFound
+from honeypy.errors import CustomFileNotFound, ValidationError
 
+from honeypy_report.schema import Schemas
 from honeypy_report import report_api
-from honeypy.api.common import Common
+from honeypy.api.common import Common, Database
 from honeypy_report.models import FeatureReport, SetReport, Report, Test, Scenario, Step
 
 class ReportController(object):
@@ -18,23 +20,7 @@ class ReportController(object):
         self.config = report_api.config
         self.common = Common()
         self.ifFinish = False
-        self.initiate_db()
-
-    def initiate_db(self):
-        """
-            Start database session
-        """
-        uri = 'mongodb://' + self.config['DATABASE_IP'] + ':' + str(self.config['DATABASE_PORT'])
-        client = MongoClient(uri)
-        db = client[self.config['REPORT_DB']]
-        self.collection = db[self.config['REPORT_DB']]
-
-    def check_kind(self, data):
-        """
-            Check if kind field is present in payload
-        """
-        if not "kind" in data or not data["kind"]:
-            raise ValidationError(errors = {"kind": "Please provide a valid 'kind' ['set', 'feature']"})
+        self.db = Database(report_api.config['DATABASE_IP'], report_api.config['DATABASE_PORT'], report_api.config['REPORT_DB'])
 
     def get(self, report_id):
         """
@@ -43,50 +29,38 @@ class ReportController(object):
             :kind: the type of report
             :report_id: the id of the requested report
         """
-        response = Report.objects(id=report_id).get().to_json()
-        return self.common.create_response(200, json.loads(response))
+        document = self.db.find_one({"_id":ObjectId(report_id)})
+        return self.common.create_response(200, document)
 
     def create(self, data):
+        data = self.validate_report(data)
+        response = self.db.insert_one(data)
+        return self.common.create_response(201, {"id":str(response.inserted_id)})
+
+    def validate_report(self, data, update = False, normalize = True):
         """
             Create a feature/set report
 
             :data: the request payload
         """
-        self.check_kind(data)
-        data = self.common.clean(data)
-        report = None
-        if data["kind"] == "feature":
-            report = self.create_feature_report(data)
-            return self.common.create_response(201, {"id":str(report.id)})
-        elif data["kind"] == "set":
-            report = self.create_set_report(data)
-            return self.common.create_response(201, {"id":str(report.id)})
+        validator = Validator(Schemas().report)
+        validation = validator.validate(data, update = update, normalize = normalize)
+        if not validation:
+            raise ValidationError(validator.errors)
+        return self.validate_report_type(data, update, normalize)
 
-    def create_feature_report(self, data):
-        response = TestService().get(data["path"], "feature")
-        if response.status_code == 200:
-            data["setId"] = None
-            data["message"] = "Incomplete"
-            report = FeatureReport(**data)
-            report.save()
-            return report
-        elif response.status_code == 404:
-            raise CustomFileNotFound()
-
-    def create_set_report(self, data):
-        """
-            Create a set report
-        """
-        response = SetService().get(data["name"])
-        _set = response.json()
-        _set["tests"] = []
-        _set["errors"] = []
-        _set = self.common.clean(_set)
-        _set["message"] = "Incomplete"
-        _set["result"] = None
-        report = SetReport(**_set).save()
-        self.append_set_tests(report, _set)
-        return report
+    def validate_report_type(self, data, update, normalize):
+        validator = Validator({}, purge_unknown = True)
+        validation = None
+        schemas = Schemas()
+        if data["kind"] == "set":
+            validator.schema = schemas.set_report
+        elif data["kind"] == "feature":
+            validator.schema = schemas.feature_report
+        validation = validator.validate(data, update = update, normalize = normalize)
+        if not validation:
+            raise ValidationError(validator.errors)
+        return data
 
     def append_set_tests(self, report, data):
         """
@@ -117,10 +91,8 @@ class ReportController(object):
         """
             Save to a report
         """
-        self.check_kind(data)
-        data = self.common.pre_save_document(data)
-        Report.objects(id = report_id).modify(set__modified = datetime.datetime.now)
-        Report.objects(id = report_id).update_one(**data)
+        data = self.validate_report(data, True, False)
+        self.db.update_one({"_id":ObjectId(report_id)}, data)
         return self.common.create_response(204)
 
     def add(self, report_id, data):

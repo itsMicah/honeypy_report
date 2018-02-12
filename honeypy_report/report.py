@@ -1,52 +1,42 @@
-from flask import Flask, Response
-from flask import request
-from flask_cors import CORS, cross_origin
-
-from honeypy_report.controller import ReportController
+import re
+from cerberus import Validator
+from copy import deepcopy
+from flask import Flask, Response, request
+from flask_cors import CORS
+from honeypy.api.common import Common, Database
+from honeypy.errors import ValidationError
 from honeypy_report import report_api
-from honeypy.errors import CustomFileNotFound
-from honeypy.api.common import Common
-from mongoengine import *
-from flask_mongoengine import MongoEngine
-from bson.errors import InvalidId
+from honeypy_report.schema import Schemas
+from pymongo.errors import DuplicateKeyError
+from honeypy_report.controller import ReportController
+"""
+    Allow Cross origin requests while in development
+"""
+CORS(report_api, resources={r'\/report\/?.*': {'origins': 'http://localhost:4200'}})
 
 """
-    Configure service
+    Instantiate Database, Common and Validator
 """
-report_api.config['MONGODB_SETTINGS'] = {
-    'db': report_api.config["REPORT_DB"],
-    'host': report_api.config["DATABASE_IP"],
-    'port': report_api.config["DATABASE_PORT"]
-}
-db = MongoEngine()
-db.init_app(report_api)
 common = Common()
-CORS(report_api, resources={r'\/report\/?.*': {'origins': 'http://localhost:4200'}})
+validator = Validator({}, purge_unknown = True)
 
 @report_api.route("/report", methods = ["POST"])
 def post_report():
     try:
-        data = request.get_json()
-        return ReportController().create(data)
-    except (OperationError, InvalidQueryError, FieldDoesNotExist) as error:
-        return common.error(error)
-    except CustomFileNotFound as error:
-        return common.create_response(404, {"errors":{"path": "File not found"}})
+        return ReportController().create(request.get_json())
+    except ValidationError as error:
+        return Common().create_response(400, error.errors)
 
 @report_api.route("/report/<report_id>", methods = ["GET"])
 def get_report(report_id):
-    try:
-        return ReportController().get(report_id)
-    except (DoesNotExist, ValidationError) as error:
-        return common.error(error)
+    return ReportController().get(report_id)
 
 @report_api.route("/report/<report_id>", methods = ["PATCH"])
 def patch_report(report_id):
     try:
-        data = request.get_json()
-        return ReportController().save(report_id, data)
-    except (ValidationError, OperationError, InvalidQueryError, FieldDoesNotExist, InvalidId) as error:
-        return common.error(error)
+        return ReportController().save(report_id, request.get_json())
+    except ValidationError as error:
+        return Common().create_response(400, error.errors)
 
 @report_api.route("/report/<report_id>/add", methods = ["POST"])
 def add_test(report_id):
