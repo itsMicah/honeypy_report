@@ -1,13 +1,28 @@
-import re
-from cerberus import Validator
-from copy import deepcopy
-from flask import Flask, Response, request
+"""
+
+    HONEYPY REPORT SERVICE
+
+    Honeypy Report Service maintains reports, organization, and statuses
+
+"""
+
+
+"""
+    Import flask service dependencies
+"""
+from flask import Flask, request
 from flask_cors import CORS
-from honeypy.api.common import Common, Database
+
+"""
+    Import Honeypy libs
+"""
+from honeypy.api.common import Common
 from honeypy.errors import ValidationError
+
+"""
+    Honeypy report imports
+"""
 from honeypy_report import report_api
-from honeypy_report.schema import Schemas
-from pymongo.errors import DuplicateKeyError
 from honeypy_report.controller import ReportController
 
 """
@@ -16,10 +31,9 @@ from honeypy_report.controller import ReportController
 CORS(report_api, resources={r'\/report\/?.*': {'origins': 'http://localhost:4200'}})
 
 """
-    Instantiate Database, Common and Validator
+    Instantiate Common
 """
 common = Common()
-validator = Validator({}, purge_unknown = True)
 
 """
     Create a report endpoint
