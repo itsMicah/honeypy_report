@@ -41,31 +41,17 @@ def patch_report(report_id):
 @report_api.route("/report/<report_id>/add", methods = ["POST"])
 def add_test(report_id):
     try:
-        data = request.get_json()
-        return ReportController().add(report_id, data)
-    except (OperationError, InvalidQueryError, FieldDoesNotExist, InvalidId, ValidationError) as error:
-        return common.error(error)
+        return ReportController().add(report_id, request.get_json())
+    except ValidationError as error:
+        return Common().create_response(400, error.errors)
 
-# @report_api.route("/report/search", methods = ["POST"])
-# def getReportsByDate():
-#     try:
-#         data = request.get_json()
-#         results = ReportController().getReportsByDate(data)
-#         return createResponse(results)
-#     except ValidationError as error:
-#         return common.validation_error(error)
-#
-#
 @report_api.route("/report/<report_id>/finish", methods = ["GET"])
 def finish(report_id):
-    path = request.args.get('path')
-    return ReportController().finish(report_id, path)
-#
-# @report_api.route("/report/<reportId>", methods = ["DELETE"])
-# def deleteReport(reportId):
-#     response = ReportController(reportId).deleteReport()
-#     return createResponse(response)
-
+    try:
+        path = request.args.get('path')
+        return ReportController().finish(report_id, path)
+    except ValidationError as error:
+        return Common().create_response()
 
 def main():
     report_api.run(host=report_api.config["REPORT_IP"], port=report_api.config["REPORT_PORT"], threaded=True)
