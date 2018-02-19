@@ -1,37 +1,33 @@
 import pytest
+
 from copy import deepcopy
+
+from honeypy_report.tests.assertions import Assertions
 from honeypy.api.report import ReportService
 from honeypy.api.test import TestService
+
 from bson.objectid import ObjectId
 
 test_service = TestService()
 report_service = ReportService()
-
-def pytest_namespace():
-    return {
-        'report_id': None
-    }
+assertions = Assertions()
 
 feature = {
     "path":"feature_report.feature",
-    "kind":"feature"
-}
-
-report = {
     "kind":"feature",
-    "path":feature["path"]
+    "host":"Localhost"
 }
 
-report_save = deepcopy(report)
-report_save["browser"] = "firefox"
-report_save["fail"] = True
-report_save["host"] = "Other Host"
+report_save = {
+    "browser": "firefox",
+    "fail": True,
+    "host": "Other Host"
+}
 
 scenario_id_1 = str(ObjectId())
 scenario_id_2 = str(ObjectId())
 
 scenario_1 = {
-    "kind":"feature",
     "_type":"scenario",
     "text":"Scenario: Test Things",
     "name":"Test Things",
@@ -43,7 +39,6 @@ scenario_1 = {
 
 scenario_1_tests = [
     {
-        "kind":"feature",
         "_type":"test",
         "test":"Given I do things",
         "text":"Given I do things",
@@ -52,7 +47,6 @@ scenario_1_tests = [
         "scenarioId": scenario_id_1
     },
     {
-        "kind":"feature",
         "_type":"test",
         "test":"When I do things",
         "text":"When I do things",
@@ -61,7 +55,6 @@ scenario_1_tests = [
         "scenarioId": scenario_id_1
     },
     {
-        "kind":"feature",
         "_type":"test",
         "test":"Then I do things",
         "text":"Then I do things",
@@ -72,7 +65,6 @@ scenario_1_tests = [
 ]
 
 scenario_2 = {
-    "kind":"feature",
     "_type":"scenario",
     "text":"Scenario: 2 Test Things",
     "name":"2 Test Things",
@@ -84,7 +76,6 @@ scenario_2 = {
 
 scenario_2_tests = [
     {
-        "kind":"feature",
         "_type":"test",
         "test":"Given I do things again",
         "text":"Given I do things again",
@@ -93,7 +84,6 @@ scenario_2_tests = [
         "scenarioId": scenario_id_2
     },
     {
-        "kind":"feature",
         "_type":"test",
         "test":"When I do things again",
         "text":"When I do things again",
@@ -102,7 +92,6 @@ scenario_2_tests = [
         "scenarioId": scenario_id_2
     },
     {
-        "kind":"feature",
         "_type":"test",
         "test":"Then I do things again",
         "text":"Then I do things again",
@@ -112,35 +101,29 @@ scenario_2_tests = [
     }
 ]
 
+
+def pytest_namespace():
+    return {
+        'report_id': None
+    }
+
 def test_setup_data():
     test_service.delete(feature["path"], "feature")
     response = test_service.create(feature)
     assert response.status_code == 201
 
 def test_create_report():
-    response = report_service.create(report)
+    response = test_service.get(feature["path"], "feature")
+    response = report_service.create(response.json())
     assert response.status_code == 201
     data = response.json()
     pytest.report_id = data["id"]
-    assert data["id"]
+    assert len(data["id"]) == 24
 
 def test_verify_report_created():
     response = report_service.get(pytest.report_id)
     assert response.status_code == 200
     data = response.json()
-    assert data["_id"]
-    assert data["tests"] == []
-    assert data["created"]
-    assert data["modified"]
-    assert data["host"] == "Localhost"
-    assert data["url"] == ""
-    assert data["browser"] == "chrome"
-    assert data["message"] == "Incomplete"
-    assert data["fail"] == False
-    assert data["errors"] == []
-    assert data["kind"] == report["kind"]
-    assert data["path"] == report["path"]
-    assert data["content"] == []
 
 def test_verify_report_save():
     response = report_service.save(pytest.report_id, report_save)
