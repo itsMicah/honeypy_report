@@ -27,7 +27,8 @@ class Schemas(object):
             },
             "host": {
                 "type": "string",
-                "required": True
+                "required": True,
+                "minlength": 1
             },
             "result": {
                 "type": "boolean",
