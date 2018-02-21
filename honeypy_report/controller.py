@@ -44,7 +44,7 @@ class ReportController(object):
             :report_id: the id of the requested report
         """
         response = Report.objects(id=report_id).get().to_json()
-        return self.common.create_response(200, response)
+        return self.common.create_response(200, json.loads(response))
 
     def create(self, data):
         """
@@ -57,10 +57,10 @@ class ReportController(object):
         report = None
         if data["kind"] == "feature":
             report = self.create_feature_report(data)
-            return self.common.create_response(201, json.dumps({"id":str(report.id)}))
+            return self.common.create_response(201, {"id":str(report.id)})
         elif data["kind"] == "set":
             report = self.create_set_report(data)
-            return self.common.create_response(201, json.dumps({"id":str(report.id)}))
+            return self.common.create_response(201, {"id":str(report.id)})
 
     def create_feature_report(self, data):
         response = TestService().get(data["path"], "feature")

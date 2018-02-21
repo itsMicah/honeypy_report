@@ -47,7 +47,7 @@ class FeatureReport(Report):
     path = StringField(required = True, regex = r"^.*\.feature")
     name = StringField(regex = r"^.*\.feature")
     setId = StringField()
-    content = ListField(StringField(), default = [])
+    contents = ListField(StringField(), default = [])
 
 class SetReport(Report):
     kind = StringField(required = True, choices = ["set"], default = "set")

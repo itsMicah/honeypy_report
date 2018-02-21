@@ -35,9 +35,6 @@ def post_report():
 
 @report_api.route("/report/<report_id>", methods = ["GET"])
 def get_report(report_id):
-    """
-        Get a host by name
-    """
     try:
         return ReportController().get(report_id)
     except (DoesNotExist, ValidationError) as error:
