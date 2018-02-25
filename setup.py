@@ -10,6 +10,8 @@ setup(
     packages = [
         "honeypy_report",
         "honeypy_report.tests",
+        "honeypy_report.tests.set_report",
+        "honeypy_report.tests.feature_report"
     ],
     install_requires = [
         "certifi",
