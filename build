@@ -12,7 +12,7 @@ python setup.py sdist
 printout "Building Docker Image"
 
 # build docker image
-docker build --build-arg SSH_PRIVATE_KEY="$(cat ~/.ssh/deployment_key)" --build-arg PACKAGE=$1 -t mprescott/honeypy_report .
+docker build --no-cache --build-arg SSH_PRIVATE_KEY="$(cat ~/.ssh/deployment_key)" --build-arg PACKAGE=$1 -t mprescott/honeypy_report:latest .
 
 printout "Pushing Docker Image to Docker Hub"
 docker push mprescott/honeypy_report:latest
