@@ -78,4 +78,7 @@ def finish(report_id):
 
 
 def main():
-    report_api.run(host=report_api.config["REPORT_IP"], port=report_api.config["REPORT_PORT"], threaded=True)
+    if report_api.config["PRODUCTION"]:
+        report_api.run(host=report_api.config["IP"], port=report_api.config["PORT"], threaded=True)
+    else:
+        report_api.run(host=report_api.config["HOST_IP"], port=report_api.config["HOST_PORT"], threaded=True)
