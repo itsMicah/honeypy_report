@@ -28,8 +28,8 @@ RUN mkdir configs
 RUN mkdir honeypy
 
 # Copy configs over
-COPY honeypy_report/configs/ configs/
-ENV HONEYPY_CONFIG=configs/production.py
+COPY honeypy_report/configs/ /root/configs/
+ENV HONEYPY_CONFIG=/root/configs/production.py
 
 # Install honeypy report service
 COPY dist/${PACKAGE} .
@@ -43,4 +43,4 @@ RUN cd honeypy/ && python setup.py install
 EXPOSE 80
 
 # start service
-CMD python3 /usr/local/lib/python3.6/site-packages/honeypy_report/
+CMD honeypy_report
