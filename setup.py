@@ -24,6 +24,8 @@ setup(
         "MarkupSafe",
         "py",
         "pymongo",
+        "mongoengine",
+        "flask-mongoengine",
         "pytest",
         "requests",
         "six",
