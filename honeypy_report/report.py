@@ -1,7 +1,7 @@
 from flask import Flask, Response
 from flask import request
-from flask_cors import CORS, cross_origin
-
+from flask_cors import CORS
+from flask_basicauth import BasicAuth
 from honeypy_report.controller import ReportController
 from honeypy_report import report_api
 from honeypy.errors import CustomFileNotFound
@@ -23,7 +23,10 @@ db.init_app(report_api)
 common = Common()
 CORS(report_api, resources={r'\/report\/?.*': {'origins': 'http://localhost:4200'}})
 
-@report_api.route("/report", methods = ["POST"])
+basic_auth = BasicAuth(report_api)
+
+@report_api.route("/", methods = ["POST"])
+@basic_auth.required
 def post_report():
     try:
         data = request.get_json()
@@ -33,14 +36,16 @@ def post_report():
     except CustomFileNotFound as error:
         return common.create_response(404, {"errors":{"path": "File not found"}})
 
-@report_api.route("/report/<report_id>", methods = ["GET"])
+@report_api.route("/<report_id>", methods = ["GET"])
+@basic_auth.required
 def get_report(report_id):
     try:
         return ReportController().get(report_id)
     except (DoesNotExist, ValidationError) as error:
         return common.error(error)
 
-@report_api.route("/report/<report_id>", methods = ["PATCH"])
+@report_api.route("/<report_id>", methods = ["PATCH"])
+@basic_auth.required
 def patch_report(report_id):
     try:
         data = request.get_json()
@@ -48,7 +53,8 @@ def patch_report(report_id):
     except (ValidationError, OperationError, InvalidQueryError, FieldDoesNotExist, InvalidId) as error:
         return common.error(error)
 
-@report_api.route("/report/<report_id>/add", methods = ["POST"])
+@report_api.route("/<report_id>/add", methods = ["POST"])
+@basic_auth.required
 def add_test(report_id):
     try:
         data = request.get_json()
@@ -66,7 +72,8 @@ def add_test(report_id):
 #         return common.validation_error(error)
 #
 #
-@report_api.route("/report/<report_id>/finish", methods = ["GET"])
+@report_api.route("/<report_id>/finish", methods = ["GET"])
+@basic_auth.required
 def finish(report_id):
     path = request.args.get('path')
     return ReportController().finish(report_id, path)
@@ -81,4 +88,4 @@ def main():
     if report_api.config["PRODUCTION"]:
         report_api.run(host=report_api.config["IP"], port=report_api.config["PORT"], threaded=True)
     else:
-        report_api.run(host=report_api.config["HOST_IP"], port=report_api.config["HOST_PORT"], threaded=True)
+        report_api.run(host=report_api.config["REPORT_IP"], port=report_api.config["REPORT_PORT"], threaded=True)
