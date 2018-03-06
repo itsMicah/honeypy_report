@@ -14,24 +14,14 @@ setup(
         "honeypy_report.tests.feature_report"
     ],
     install_requires = [
-        "certifi",
-        "chardet",
-        "click",
         "Flask",
         "Flask-Cors",
-        "idna",
-        "Jinja2",
-        "MarkupSafe",
-        "py",
         "pymongo",
         "mongoengine",
         "flask-mongoengine",
+        "Flask-BasicAuth",
         "pytest",
-        "requests",
-        "six",
-        "urllib3",
-        "Werkzeug",
-        "itsdangerous"
+        "requests"
     ],
     classifiers = [
         "'Programming Language :: Python :: 3.6'"
