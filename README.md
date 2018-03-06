@@ -1,15 +1,25 @@
 # Honeypy Report Service #
 
-Honeypy report service for test reports
+Honeypy reoprt service for managing test service reports
 
 ## Requirements:  
 
-* Python 3.6
+* Install [Python 3.6](https://www.python.org/downloads/)
+* Install [Virtualenv](https://virtualenv.pypa.io/en/stable/)  
+  * Run `pip install virtualenv`
 
-## Project Setup  
+## VirtualEnv:
+* Create a virtual python environment   
+  * Run `virtualenv {{environment name}} -p python3`
+* Assuming the above command executed correctly, activate the environment   
+  * Run `source {{environment name}}/bin/activate`
+* Running the above command should create an isolated python environment
 
-* Clone the repo  
-* Navigate to root of the project folder  
-* Run ```python setup.py sdist```  
-* Run ```pip install dist/<tarball created in previous step>```  
+
+## Project Setup for Development
+
+* Clone the report service repo  
+* Navigate to the project root
+* Set the environment variable `HONEYPY_CONFIG` and set it's value to the path of a honeypy config file
+* Run ```python setup.py develop```
 * Run ```honeypy_report``` to start the server  
