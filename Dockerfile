@@ -19,7 +19,6 @@ RUN ssh-keyscan bitbucket.org >> /root/.ssh/known_hosts
 RUN git clone git@bitbucket.org:Micerbeats/honeypy.git
 
 FROM python:3.6-alpine3.6
-ARG PACKAGE
 
 RUN mkdir configs
 RUN mkdir honeypy
@@ -30,7 +29,7 @@ ENV HONEYPY_CONFIG=/root/configs/production.py
 
 # Install honeypy report service
 COPY dist/honeypy_report-0.1.tar.gz .
-RUN pip install $PACKAGE
+RUN pip install honeypy_report-0.1.tar.gz
 
 # Install honeypy package
 COPY --from=session honeypy/ honeypy/
