@@ -2,27 +2,21 @@ pipeline:
   build:
     when:
       event:
-        exclude: deployment
+        branch: master
+        event: push
     image: python:alpine3.6
     commands:
       - python setup.py sdist
 
-  parse_tag:
-    when:
-      branch: development
-      event: [push, deployment]
-    image: alpine
-    commands:
-      - VERSION=$(cat setup.py | grep version | sed "s/version = \"\(.*\)\",/\1/")
-      - TAG=$VERSION-${DRONE_COMMIT_SHA:0:8}
-      - echo $TAG > .tags
-
   publish:
     when:
-      branch: development
+      branch: master
       event: push
     secrets:
       - docker_username
       - docker_password
+      - ssh_key
     image: plugins/docker
-    repo: devcohealth/honeypy-report
+    repo: mprescott/honeypy_report
+    build_args_from_env:
+      - SSH_KEY

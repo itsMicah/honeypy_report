@@ -9,15 +9,14 @@ RUN apk update
 RUN apk add git
 RUN apk add openssh
 
-ARG SSH_PRIVATE_KEY
-ARG PACKAGE
+ARG SSH_KEY
 
-RUN mkdir /root/.ssh/
-RUN echo "${SSH_PRIVATE_KEY}" > /root/.ssh/id_rsa
-RUN chmod 600 /root/.ssh/id_rsa
-
+RUN mkdir /root/.ssh
+RUN echo "$SSH_KEY" > /root/.ssh/id_rsa
+RUN chmod 0600 /root/.ssh/id_rsa
 RUN touch /root/.ssh/known_hosts
 RUN ssh-keyscan bitbucket.org >> /root/.ssh/known_hosts
+RUN git clone git@bitbucket.org:Micerbeats/honeypy.git
 
 RUN git clone git@bitbucket.org:Micerbeats/honeypy.git
 
@@ -32,7 +31,7 @@ COPY honeypy_report/configs/ /root/configs/
 ENV HONEYPY_CONFIG=/root/configs/production.py
 
 # Install honeypy report service
-COPY dist/${PACKAGE} .
+COPY dist/honeypy_report-0.1.tar.gz .
 RUN pip install $PACKAGE
 
 # Install honeypy package
