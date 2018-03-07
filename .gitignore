@@ -3,5 +3,4 @@ env/
 __pycache__/
 dist/
 honeypy_report.egg-info/
-configs/
 .cache/
