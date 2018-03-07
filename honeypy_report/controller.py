@@ -63,7 +63,7 @@ class ReportController(object):
             return self.common.create_response(201, {"id":str(report.id)})
 
     def create_feature_report(self, data):
-        response = TestService(self.config).get(data["path"], "feature")
+        response = TestService().get(data["path"], "feature")
         if response.status_code == 200:
             data["setId"] = None
             data["message"] = "Incomplete"
@@ -77,7 +77,7 @@ class ReportController(object):
         """
             Create a set report
         """
-        response = SetService(self.config).get(data["name"])
+        response = SetService().get(data["name"])
         _set = response.json()
         _set["tests"] = []
         _set["errors"] = []
@@ -96,7 +96,7 @@ class ReportController(object):
             :data: the data to push to the report object
         """
         for path in data["features"]:
-            response = TestService(self.config).get(path, "feature")
+            response = TestService().get(path, "feature")
             if response.status_code == 404:
                 SetReport.objects(id = report.id).update_one(push__errors=f"'{path}' does not exist")
                 SetReport.objects(id = report.id).update_one(pull__features=path)
