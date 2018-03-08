@@ -21,7 +21,7 @@ report_api.config['MONGODB_SETTINGS'] = {
 db = MongoEngine()
 db.init_app(report_api)
 common = Common()
-CORS(report_api, resources={r'\/report\/?.*': {'origins': 'http://localhost:4200'}})
+CORS(report_api, resources={r'\/?.*': {'origins': 'http://localhost:4200'}})
 
 basic_auth = BasicAuth(report_api)
 
