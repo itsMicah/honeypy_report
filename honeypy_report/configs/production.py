@@ -35,8 +35,9 @@ DATABASE_IP="honeypy-db-mongodb"
 DATABASE_PORT=27017
 
 # Redis Configs
-REDIS_IP="honeypy-rds-redis"
+REDIS_HOST="honeypy-rds-redis"
 REDIS_PORT=6379
+REDIS_PASSWORD="P@r41LaX?!"
 
 BROWSERS = [
     "chrome",
