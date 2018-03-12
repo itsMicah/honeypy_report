@@ -28,7 +28,7 @@ class Schemas(object):
             "host": {
                 "type": "string",
                 "required": True,
-                "minlength": 1
+                "min": 1
             },
             "result": {
                 "type": "boolean",
@@ -46,6 +46,14 @@ class Schemas(object):
             "url": {
                 "type": "string",
                 "default": ""
+            },
+            "status": {
+                "type": "string",
+                "default": "Queued"
+            },
+            "name": {
+                "type": "string",
+                "required": True
             },
             "browser": {
                 "type": "string",
@@ -67,12 +75,18 @@ class Schemas(object):
                 "type": "list",
                 "default": []
             },
+            "contents": {
+                "type": "list",
+                "required": True,
+                "schema": {
+                    "type": "string"
+                }
+            },
             "parentId": {
                 "type": "string"
             },
             "message": {
-                "type": "string",
-                "default": "Queued"
+                "type": "string"
             }
         }
         self.feature_report.update(self.report)
@@ -96,10 +110,6 @@ class Schemas(object):
             "reports": {
                 "type": "list",
                 "default": []
-            },
-            "message": {
-                "type": "string",
-                "default": "Running"
             }
         }
         self.set_report.update(self.report)

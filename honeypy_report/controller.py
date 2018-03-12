@@ -12,7 +12,6 @@ from honeypy.errors import CustomFileNotFound, ValidationError
 from honeypy_report.schema import Schemas
 from honeypy_report import report_api
 from honeypy.api.common import Common, Database
-from honeypy_report.models import FeatureReport, SetReport, Report, Test, Scenario, Step
 
 class ReportController(object):
 
@@ -251,6 +250,7 @@ class ReportController(object):
             :report_id: the report id
             :scenario: the scenario object
         """
+        scenario["created"] = self.common.get_timestamp()
         self.db.update_one({"_id":ObjectId(report_id)}, {"$push": {"tests": scenario}})
 
     def add_test(self, report_id, test):
@@ -260,6 +260,7 @@ class ReportController(object):
             :report_id: the report id
             :scenario: the test object
         """
+        test["created"] = self.common.get_timestamp()
         if "scenarioId" not in test or not test["scenarioId"]:
             response = self.db.update_one({"_id":ObjectId(report_id)}, {"$push": {"tests": test}})
         else:
@@ -330,12 +331,21 @@ class ReportController(object):
             :report: the report
             :path: the path of the feature
         """
+        report = self.check_report_result(report)
+        self.db.update_one({"_id": ObjectId(report_id)}, {"$set": {"end": self.common.get_timestamp(), "result":report["result"], "message":report["message"], "status":"Done"}})
+
+    def check_report_result(self, report):
         message = ""
-        if report["result"] == True:
+        result = None
+        if report["result"] == True or report["result"] == None:
             message = "Success"
-        elif report["result"] == False:
+            result = True
+        elif report["result"] == False or report["status"] == "Queued":
             message = "Failure"
-        self.db.update_one({"_id": ObjectId(report_id)}, {"$set": {"end": self.common.get_timestamp(), "result":report["result"]}})
+            result = False
+        report["message"] = message
+        report["result"] = result
+        return report
 
     def finish_set_report(self, report_id):
         """
@@ -345,11 +355,17 @@ class ReportController(object):
         """
         set_report = self.db.find_one({"_id": ObjectId(report_id)})
         finished = True
+        result = True
+        message = "Success"
         for feature in set_report["reports"]:
             if feature["reportId"]:
                 feature_report = self.db.find_one({"_id": ObjectId(feature["reportId"])})
+                feature_report = self.check_report_result(feature_report)
                 if not "end" in feature_report:
                     finished = False
                     break
+                if feature_report["result"] == False:
+                    result = feature_report["result"]
+                    message = feature_report["message"]
         if finished == True:
-            self.db.update_one({"_id": ObjectId(report_id)}, {"$set": {"end": self.common.get_timestamp()}})
+            self.db.update_one({"_id": ObjectId(report_id)}, {"$set": {"end": self.common.get_timestamp(), "message":message, "result":result, "status":"Done"}})

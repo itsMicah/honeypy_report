@@ -8,20 +8,14 @@
 
 
 """
-    Import flask service dependencies
+    Import dependencies
 """
 from flask import Flask, request
 from flask_cors import CORS
 
-"""
-    Import Honeypy libs
-"""
 from honeypy.api.common import Common
 from honeypy.errors import ValidationError
 
-"""
-    Honeypy report imports
-"""
 from honeypy_report import report_api
 from honeypy_report.controller import ReportController
 
@@ -35,10 +29,11 @@ CORS(report_api, resources={r'\/report\/?.*': {'origins': 'http://localhost:4200
 """
 common = Common()
 
+
 """
     Create a report endpoint
 """
-@report_api.route("/report", methods = ["POST"])
+@report_api.route("/", methods = ["POST"])
 def post_report():
     try:
         return ReportController().create(request.get_json())
@@ -48,14 +43,14 @@ def post_report():
 """
     Get a report by ID endpoint
 """
-@report_api.route("/report/<report_id>", methods = ["GET"])
+@report_api.route("/<report_id>", methods = ["GET"])
 def get_report(report_id):
     return ReportController().get(report_id)
 
 """
     Partial update a report by ID
 """
-@report_api.route("/report/<report_id>", methods = ["PATCH"])
+@report_api.route("/<report_id>", methods = ["PATCH"])
 def patch_report(report_id):
     try:
         return ReportController().save(report_id, request.get_json())
@@ -65,7 +60,7 @@ def patch_report(report_id):
 """
     Add test objects to a feature report
 """
-@report_api.route("/report/<report_id>/add", methods = ["POST"])
+@report_api.route("/<report_id>/add", methods = ["POST"])
 def add_test(report_id):
     try:
         return ReportController().add(report_id, request.get_json())
@@ -76,7 +71,7 @@ def add_test(report_id):
     Finish a feature report
     Also update a set report result if the feature is part of a set run
 """
-@report_api.route("/report/<report_id>/finish", methods = ["GET"])
+@report_api.route("/<report_id>/finish", methods = ["GET"])
 def finish(report_id):
     try:
         path = request.args.get('path')
