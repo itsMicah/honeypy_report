@@ -96,10 +96,7 @@ class ReportController(object):
             response = self.create(data)
             feature["reportId"] = json.loads(response.response[0])["id"]
             feature["message"] = "Success"
-        elif response.status_code == 404:
-            feature["reportId"] = None
-            feature["message"] = "Path does not exist"
-        self.db.update_one({"_id":ObjectId(parentId)}, {"$push":{"reports": feature}})
+            self.db.update_one({"_id":ObjectId(parentId)}, {"$push":{"reports": feature}})
 
     def check_inheritance(self, setId, feature):
         """
@@ -392,3 +389,53 @@ class ReportController(object):
                     message = feature_report["message"]
         if finished == True:
             self.db.update_one({"_id": ObjectId(report_id)}, {"$set": {"end": self.common.get_timestamp(), "message":message, "result":result, "status":"Done"}})
+
+    def search(self, query):
+        """
+            Search reports via query
+
+            :query: the search query object
+        """
+        query = self.validate_search(query)
+        query["pagination"].pop("pagination", None)
+        page_number = query["pagination"]["page"] - 1
+        skip = query["pagination"]["page"] * page_number
+        query["search"]["created"]["$gte"] = query["search"]["created"]["min"]
+        query["search"]["created"]["$lte"] = query["search"]["created"]["max"]
+        query["search"]["created"].pop("min", None)
+        query["search"]["created"].pop("max", None)
+        reports, total, search_total = self.db.search(query["search"], skip, query["pagination"]["limit"], query["pagination"]["sort"])
+        reports = self.check_search_results(query["search"]["kind"], reports)
+        return self.common.create_response(200, {"results": reports, "pagination": {"page":query["pagination"]["page"], "limit":query["pagination"]["limit"], "total": total, "amount":search_total}})
+
+    def check_search_results(self, kind, reports):
+        """
+            Check if search was for sets
+            If so, get feature reports within sets
+
+            :kind: search kind
+            :reports: the return of the search query
+        """
+        if kind == "set":
+            for report in reports:
+                result_index = reports.index(report)
+                for feature in report["reports"]:
+                    set_index = report["reports"].index(feature)
+                    feature_report = self.db.find_one({"_id": ObjectId(feature["reportId"])})
+                    report["reports"][set_index] = feature_report
+                reports[result_index] = report
+        return reports
+
+
+    def validate_search(self, query):
+        """
+            Validate the search query payload
+
+            :query: the search query object
+        """
+        validator = Validator(Schemas().search, purge_unknown = True)
+        query = validator.normalized(query)
+        validation = validator.validate(query)
+        if not validation:
+            raise ValidationError(validator.errors)
+        return query

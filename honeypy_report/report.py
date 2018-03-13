@@ -80,7 +80,15 @@ def finish(report_id):
         path = request.args.get('path')
         return ReportController().finish(report_id, path)
     except ValidationError as error:
-        return Common().create_response()
+        return Common().create_response(400, error.errors)
+
+@report_api.route("/search", methods = ["POST"])
+@basic_auth.required
+def search():
+    try:
+        return ReportController().search(request.get_json())
+    except ValidationError as error:
+        return Common().create_response(400, error.errors)
 
 def main():
     """

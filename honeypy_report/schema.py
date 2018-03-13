@@ -1,4 +1,5 @@
 from copy import deepcopy
+from honeypy.api.common import Common
 from honeypy_report import report_api
 
 class Schemas(object):
@@ -203,5 +204,77 @@ class Schemas(object):
                 "type": "string",
                 "minlength": 24,
                 "maxlength": 24
+            }
+        }
+
+        self.search = {
+
+            "search": {
+                "type": "dict",
+                "required": True,
+                "schema": {
+                    "kind": {
+                        "type": "string",
+                        "required": True,
+                        "allowed": ["feature", "set"]
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "path": {
+                        "type": "string"
+                    },
+                    "fail": {
+                        "type": "boolean"
+                    },
+                    "host": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": "string"
+                    },
+                    "browser": {
+                        "type": "string"
+                    },
+                    "created": {
+                        "type": "dict",
+                        "schema": {
+                            "min": {
+                                "type": "number",
+                                "default": Common().get_timestamp() - 25920000
+                            },
+                            "max": {
+                                "type": "number",
+                                "default": Common().get_timestamp()
+                            }
+                        },
+                        "default": {
+                            "$gte": Common().get_timestamp() - 25920000,
+                            "$lte": Common().get_timestamp()
+                        }
+                    }
+                }
+            },
+            "pagination": {
+                "type": "dict",
+                "schema": {
+                    "page": {
+                        "type": "number",
+                        "default": 1
+                    },
+                    "limit": {
+                        "type": "number",
+                        "default": 50
+                    },
+                    "sort": {
+                        "type": "string",
+                        "default": "_id"
+                    }
+                },
+                "default": {
+                    "page": 1,
+                    "limit": 50,
+                    "default": "_id"
+                }
             }
         }
