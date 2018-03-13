@@ -130,7 +130,7 @@ class Schemas(object):
             },
             "result": {
                 "type": "boolean",
-                "required": True
+                "required": True,
             }
         }
 

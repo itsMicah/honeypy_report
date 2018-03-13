@@ -61,8 +61,13 @@ class ReportController(object):
         if data["kind"] == "set":
             response = self.create_set_report(data)
         elif data["kind"] == "feature":
-            response = self.db.insert_one(data)
+            response = self.create_feature_report(data)
         return self.common.create_response(201, {"id":str(response.inserted_id)})
+
+    def create_feature_report(self, data):
+        if "parentId" in data:
+            self.check_inheritance(data["parentId"], data)
+        return self.db.insert_one(data)
 
     def create_set_report(self, data):
         """
@@ -72,10 +77,10 @@ class ReportController(object):
         """
         response = self.db.insert_one(data)
         for path in data["features"]:
-            self.create_set_feature(path, response.inserted_id)
+            self.create_set_feature(path, response.inserted_id, data)
         return response
 
-    def create_set_feature(self, path, parentId):
+    def create_set_feature(self, path, parentId, _set):
         """
             Create a set feature report
             Check to see if feature exists before creating a report
@@ -95,6 +100,18 @@ class ReportController(object):
             feature["reportId"] = None
             feature["message"] = "Path does not exist"
         self.db.update_one({"_id":ObjectId(parentId)}, {"$push":{"reports": feature}})
+
+    def check_inheritance(self, setId, feature):
+        """
+            Check whether to make features of set inherit from set
+        """
+        response = self.get(setId)
+        setReport = json.loads(response.response[0])
+        if setReport["inherit"] == True:
+            feature["browser"] = setReport["browser"]
+            feature["url"] = setReport["url"]
+            feature["host"] = setReport["host"]
+        return feature
 
     def validate_report(self, data, update = False, normalize = True):
         """
@@ -191,6 +208,7 @@ class ReportController(object):
             :data: the data being add to the report
         """
         data = self.validate_add(report_id, data)
+        print(data)
         if data["type"] == "step":
             self.add_test(report_id, data)
         elif data["type"] == "scenario":
@@ -335,6 +353,11 @@ class ReportController(object):
         self.db.update_one({"_id": ObjectId(report_id)}, {"$set": {"end": self.common.get_timestamp(), "result":report["result"], "message":report["message"], "status":"Done"}})
 
     def check_report_result(self, report):
+        """
+            Check the final report result (pass/fail)
+
+            :report: the report object
+        """
         message = ""
         result = None
         if report["result"] == True or report["result"] == None:
