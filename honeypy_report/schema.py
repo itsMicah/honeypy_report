@@ -241,7 +241,7 @@ class Schemas(object):
                         "schema": {
                             "min": {
                                 "type": "number",
-                                "default": Common().get_timestamp() - 25920000
+                                "default": Common().get_timestamp() - 604800000
                             },
                             "max": {
                                 "type": "number",
@@ -249,7 +249,7 @@ class Schemas(object):
                             }
                         },
                         "default": {
-                            "$gte": Common().get_timestamp() - 25920000,
+                            "$gte": Common().get_timestamp() - 604800000,
                             "$lte": Common().get_timestamp()
                         }
                     }
