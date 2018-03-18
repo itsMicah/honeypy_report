@@ -17,9 +17,8 @@ setup(
     install_requires = [
         "Flask",
         "Flask-Cors",
+        "cerberus",
         "pymongo",
-        "mongoengine",
-        "flask-mongoengine",
         "Flask-BasicAuth",
         "pytest",
         "requests"
