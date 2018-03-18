@@ -44,7 +44,7 @@ class ReportController(object):
         if report["kind"] == "set":
             for feature in report["reports"]:
                 index = report["reports"].index(feature)
-                if feature["reportId"]:
+                if "reportId" in feature and feature["reportId"]:
                     feature_report = self.db.find_one({"_id":ObjectId(feature["reportId"])})
                     feature_report["_id"] = str(feature_report["_id"])
                     report["reports"][index] = feature_report
@@ -96,6 +96,9 @@ class ReportController(object):
             response = self.create(data)
             feature["reportId"] = json.loads(response.response[0])["id"]
             feature["message"] = "Success"
+            self.db.update_one({"_id":ObjectId(parentId)}, {"$push":{"reports": feature}})
+        else:
+            feature = {"kind":"feature", "path":path, "result":None, "message":None, "status":None}
             self.db.update_one({"_id":ObjectId(parentId)}, {"$push":{"reports": feature}})
 
     def check_inheritance(self, setId, feature):
@@ -421,7 +424,12 @@ class ReportController(object):
                 result_index = reports.index(report)
                 for feature in report["reports"]:
                     set_index = report["reports"].index(feature)
-                    feature_report = self.db.find_one({"_id": ObjectId(feature["reportId"])})
+                    _id = None
+                    if "reportId" in feature:
+                        _id = feature["reportId"]
+                    elif "_id" in feature:
+                        _id = feature["_id"]
+                    feature_report = self.db.find_one({"_id": ObjectId(_id)})
                     report["reports"][set_index] = feature_report
                 reports[result_index] = report
         return reports
