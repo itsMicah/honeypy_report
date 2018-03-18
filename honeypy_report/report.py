@@ -94,7 +94,7 @@ def main():
     """
         Start the service
     """
-    if api.config["PRODUCTION"]:
+    if report_api.config["PRODUCTION"]:
         report_api.run(host=report_api.config["IP"], port=report_api.config["PORT"], threaded=True)
     else:
         report_api.run(host=report_api.config["REPORT_IP"], port=report_api.config["REPORT_PORT"], threaded=True)
