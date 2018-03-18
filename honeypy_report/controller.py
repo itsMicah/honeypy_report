@@ -6,7 +6,6 @@ from honeypy.api.test import TestService
 from honeypy.api.set import SetService
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
-from mongoengine import *
 from honeypy.errors import CustomFileNotFound, ValidationError
 
 from honeypy_report.schema import Schemas
