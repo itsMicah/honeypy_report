@@ -23,7 +23,7 @@ from honeypy_report.controller import ReportController
 """
     Allow Cross origin requests while in development
 """
-CORS(report_api, resources={r'\/?.*': {'origins': 'http://localhost:4200'}})
+CORS(report_api, resources={r'\/?.*': {'origins': ['http://localhost:4200', "http://frontend-service.default.svc.cluster.local"]}})
 
 """
     Instantiate Common
