@@ -550,7 +550,7 @@ def test_finish_feature_a():
     """
         Finish Feature A
     """
-    response = report_service.finish(pytest.feature_a_id, feature_a["path"])
+    response = report_service.finish(pytest.feature_a_id)
     assert response.status_code == 204
 
     response = report_service.get(pytest.report_id)
@@ -616,7 +616,7 @@ def test_finish_feature_b():
     """
         Finish Feature B
     """
-    response = report_service.finish(pytest.feature_b_id, feature_b["path"])
+    response = report_service.finish(pytest.feature_b_id)
     assert response.status_code == 204
 
     response = report_service.get(pytest.report_id)
@@ -640,7 +640,7 @@ def test_finish_feature_c():
     """
         Finish Feature C
     """
-    response = report_service.finish(pytest.feature_c_id, feature_c["path"])
+    response = report_service.finish(pytest.feature_c_id)
     assert response.status_code == 204
 
     response = report_service.get(pytest.report_id)
