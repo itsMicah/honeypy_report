@@ -28,8 +28,7 @@ class Schemas(object):
             },
             "host": {
                 "type": "string",
-                "required": True,
-                "min": 1
+                "default":""
             },
             "result": {
                 "type": "boolean",
@@ -59,7 +58,8 @@ class Schemas(object):
             "browser": {
                 "type": "string",
                 "required": True,
-                "allowed": report_api.config["BROWSERS"]
+                "allowed": report_api.config["BROWSERS"],
+                "default": report_api.config["BROWSERS"][0]
             }
         }
 
