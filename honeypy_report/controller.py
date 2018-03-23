@@ -380,7 +380,7 @@ class ReportController(object):
         result = True
         message = "Success"
         for feature in set_report["reports"]:
-            if feature["reportId"]:
+            if "reportId" in feature:
                 feature_report = self.db.find_one({"_id": ObjectId(feature["reportId"])})
                 feature_report = self.check_report_result(feature_report)
                 if not "end" in feature_report:
