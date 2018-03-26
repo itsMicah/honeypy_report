@@ -16,7 +16,7 @@ RUN echo "$SSH_KEY" > /root/.ssh/id_rsa
 RUN chmod 0600 /root/.ssh/id_rsa
 RUN touch /root/.ssh/known_hosts
 RUN ssh-keyscan bitbucket.org >> /root/.ssh/known_hosts
-RUN git clone git@bitbucket.org:Micerbeats/honeypy.git
+RUN git clone git@bitbucket.org:codesigneddev/honeypy.git
 
 FROM python:3.6-alpine3.6
 
