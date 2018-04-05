@@ -349,7 +349,9 @@ class ReportController(object):
             :path: the path of the feature
         """
         report = self.check_report_result(report)
-        self.db.update_one({"_id": ObjectId(report_id)}, {"$set": {"end": self.common.get_timestamp(), "result":report["result"], "message":report["message"], "status":"Done"}})
+        current_time = self.common.get_timestamp()
+        duration = self.get_duration(current_time, report)
+        self.db.update_one({"_id": ObjectId(report_id)}, {"$set": {"end": current_time, "result":report["result"], "message":report["message"], "status":"Done", "duration":duration}})
 
     def check_report_result(self, report):
         """
@@ -390,7 +392,13 @@ class ReportController(object):
                     result = feature_report["result"]
                     message = feature_report["message"]
         if finished == True:
-            self.db.update_one({"_id": ObjectId(report_id)}, {"$set": {"end": self.common.get_timestamp(), "message":message, "result":result, "status":"Done"}})
+            current_time = self.common.get_timestamp()
+            duration = self.get_duration(current_time, set_report)
+            self.db.update_one({"_id": ObjectId(report_id)}, {"$set": {"end": current_time, "message":message, "result":result, "status":"Done", "duration":duration}})
+
+    def get_duration(self, current_time, report):
+        ms = int(current_time) - int(report["created"])
+        return time.strftime('%M:%S', time.gmtime(ms/1000))
 
     def search(self, query):
         """
