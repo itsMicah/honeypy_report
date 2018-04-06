@@ -86,7 +86,8 @@ def finish(report_id):
 @basic_auth.required
 def search():
     try:
-        return ReportController().search(request.get_json())
+        deep = request.args.get('deep')
+        return ReportController().search(request.get_json(), deep)
     except ValidationError as error:
         return Common().create_response(400, error.errors)
 
