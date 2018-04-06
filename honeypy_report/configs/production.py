@@ -31,7 +31,7 @@ SET_URL="http://" + SET_IP
 SET_DB="set"
 
 # Database Configs
-DATABASE_IP="honeypy-db-mongodb.default.svc.cluster.local"
+DATABASE_IP="honeypy-db-mongodb.default.svc.cluster.local:27017"
 DATABASE_PORT=27017
 
 # Redis Configs
