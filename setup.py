@@ -12,7 +12,13 @@ setup(
         "honeypy_report.configs",
         "honeypy_report.tests",
         "honeypy_report.tests.set_report",
-        "honeypy_report.tests.feature_report"
+        "honeypy_report.tests.feature_report",
+        "honeypy_report.tests.feature_report.scenario_fail",
+        "honeypy_report.tests.feature_report.scenario_pass",
+        "honeypy_report.tests.feature_report.step_fail",
+        "honeypy_report.tests.feature_report.step_pass",
+        "honeypy_report.tests.set_report.scenario_fail",
+        "honeypy_report.tests.set_report.scenario_pass"
     ],
     install_requires = [
         "Flask",
