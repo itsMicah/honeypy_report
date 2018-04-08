@@ -290,6 +290,8 @@ class ReportController(object):
             :report_id: the report id
             :data: the test object
         """
+        print("HI")
+        print(data["result"])
         if data["result"] == False:
             report = self.db.find_one({"_id":ObjectId(report_id)})
             self.update_set_result(report, data)
@@ -323,7 +325,7 @@ class ReportController(object):
             :data: the test object
         """
         if "scenarioId" in data:
-            self.db.update_one({"_id":ObjectId(report["_id"]), "tests.scenarioId": data["scenarioId"]}, {'$set': {'tests.$.result':data["result"], "tests.$.message":"Failure"}})
+            self.db.update_one({"_id":ObjectId(report["_id"]), "tests.scenarioId": data["scenarioId"]}, {'$set': {'tests.$.result':False, "tests.$.message":"Failure"}})
 
     def finish(self, report_id, path):
         """
