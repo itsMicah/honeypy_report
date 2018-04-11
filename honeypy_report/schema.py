@@ -55,6 +55,11 @@ class Schemas(object):
                 "type": "string",
                 "required": True
             },
+            "queue": {
+                "type": "string",
+                "required": True,
+                "default": "normal-queue"
+            },
             "browser": {
                 "type": "string",
                 "required": True,
