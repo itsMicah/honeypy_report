@@ -417,11 +417,12 @@ class ReportController(object):
         query["search"]["created"]["$lte"] = query["search"]["created"]["max"]
         query["search"]["created"].pop("min", None)
         query["search"]["created"].pop("max", None)
+        fields = self.return_specific_fields(deep)
         reports, total, search_total = self.db.search(query["search"], skip, query["pagination"]["limit"], query["pagination"]["sort"])
-        reports = self.check_search_results(query["search"]["kind"], reports, deep)
+        reports = self.check_search_results(query["search"]["kind"], reports, fields)
         return self.common.create_response(200, {"results": reports, "pagination": {"page":query["pagination"]["page"], "limit":query["pagination"]["limit"], "total": total, "amount":search_total}})
 
-    def check_search_results(self, kind, reports, deep):
+    def check_search_results(self, kind, reports, fields):
         """
             Check if search was for sets
             If so, get feature reports within sets
@@ -439,28 +440,14 @@ class ReportController(object):
                         _id = feature["reportId"]
                     elif "_id" in feature:
                         _id = feature["_id"]
-                    feature_report = self.db.find_one({"_id": ObjectId(_id)})
-                    feature_report = self.check_deep_search(feature_report, deep)
+                    feature_report = self.db.find_one({"_id": ObjectId(_id)}, fields)
                     report["reports"][set_index] = feature_report
                 reports[result_index] = report
         return reports
 
-    def check_deep_search(self, report, deep):
-        """
-            Check if the search query was a deep search
-            If so, remove extraneous data
-
-            :report: the report that may be modified
-            :deep: the value specifying whether the request was a deep search or not
-        """
-        if report:
-            if not deep:
-                report.pop("tests", None)
-                report.pop("contents", None)
-                report.pop("browser", None)
-                report.pop("host", None)
-                report.pop("url", None)
-        return report
+    def return_specific_fields(self, deep):
+        if not deep:
+            return {"path":1, "name":1, "message":1, "result": 1, "status": 1, "fail":1}
 
     def validate_search(self, query):
         """
