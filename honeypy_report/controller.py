@@ -447,7 +447,7 @@ class ReportController(object):
 
     def return_specific_fields(self, deep):
         if not deep:
-            return {"path":1, "name":1, "message":1, "result": 1, "status": 1, "fail":1, 'kind':, 'parentId':1}
+            return {"path":1, "name":1, "message":1, "result": 1, "status": 1, "fail":1, 'kind':1, 'parentId':1}
 
     def validate_search(self, query):
         """
