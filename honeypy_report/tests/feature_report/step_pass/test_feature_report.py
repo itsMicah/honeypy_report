@@ -94,5 +94,4 @@ def test_verify_finish():
     assert response.status_code == 200
     data = response.json()
     assert len(data["tests"]) == 3
-    print(data)
     assertions.assert_report_status(data, "Done", True, end = True, message = "Success")
