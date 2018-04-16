@@ -104,6 +104,7 @@ class Schemas(object):
         self.set_report = {
             "inherit": {
                 "type": "boolean",
+                "required": True,
                 "default": False
             },
             "features": {
@@ -111,7 +112,8 @@ class Schemas(object):
                 "schema": {
                     "type": "string",
                     "regex": "^((?!\/\/).)+\.feature$"
-                }
+                },
+                "default":[]
             },
             "reports": {
                 "type": "list",

@@ -77,8 +77,9 @@ def add_test(report_id):
 @basic_auth.required
 def finish(report_id):
     try:
+        force = request.args.get('force')
         path = request.args.get('path')
-        return ReportController().finish(report_id, path)
+        return ReportController().finish(report_id, path, force)
     except ValidationError as error:
         return Common().create_response(400, error.errors)
 
