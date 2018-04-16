@@ -13,7 +13,7 @@ setup(
         "honeypy_report.tests",
         "honeypy_report.tests.set_report",
         "honeypy_report.tests.crud",
-        "honeypy_report.tests.create",
+        "honeypy_report.tests.crud.create",
         "honeypy_report.tests.feature_report",
         "honeypy_report.tests.feature_report.scenario_fail",
         "honeypy_report.tests.feature_report.scenario_pass",
