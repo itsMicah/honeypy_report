@@ -76,7 +76,8 @@ class ReportController(object):
         """
         response = self.db.insert_one(data)
         for path in data["features"]:
-            self.create_set_feature(path, response.inserted_id, data)
+            parentId = response.inserted_id
+            self.create_set_feature(path, parentId, data)
         return response
 
     def create_set_feature(self, path, parentId, _set):
