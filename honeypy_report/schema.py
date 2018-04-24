@@ -285,3 +285,42 @@ class Schemas(object):
                 }
             }
         }
+
+        self.dashboard = {
+            "kind": {
+                "type": "string",
+                "default":"set",
+                "allowed": ["set"]
+            },
+            "created": {
+                "type": "dict",
+                "schema": {
+                    "min": {
+                        "type": "number",
+                        "default": Common().get_timestamp() - 604800000
+                    },
+                    "max": {
+                        "type": "number",
+                        "default": Common().get_timestamp()
+                    }
+                },
+                "default": {
+                    "$gte": Common().get_timestamp() - 604800000,
+                    "$lte": Common().get_timestamp()
+                }
+            },
+            "host": {
+                "type": "string"
+            },
+            "url": {
+                "type": "string"
+            },
+            "browsers": {
+                "type": "list",
+                "default": report_api.config["BROWSERS"],
+                "allowed": report_api.config["BROWSERS"]
+            },
+            "name": {
+                "type": "string"
+            }
+        }

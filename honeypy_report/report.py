@@ -87,7 +87,15 @@ def finish(report_id):
 def search():
     try:
         deep = request.args.get('deep')
-        return ReportController().search(request.get_json(), deep)
+        return ReportController().search(request.get_json(), deep, dashboard)
+    except ValidationError as error:
+        return Common().create_response(400, error.errors)
+
+@report_api.route("/dashboard", methods = ["POST"])
+@basic_auth.required
+def dashboard():
+    try:
+        return ReportController().get_dashboard(request.get_json())
     except ValidationError as error:
         return Common().create_response(400, error.errors)
 

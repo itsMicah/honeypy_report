@@ -2,6 +2,7 @@ import time, json, pymongo, re, datetime
 from cerberus import Validator
 from pymongo import MongoClient
 from flask import Flask
+from copy import deepcopy
 from honeypy.api.test import TestService
 from honeypy.api.set import SetService
 from bson.objectid import ObjectId
@@ -355,6 +356,8 @@ class ReportController(object):
         current_time = self.common.get_timestamp()
         duration = self.get_duration(current_time, report)
         self.db.update_one({"_id": ObjectId(report_id)}, {"$set": {"end": current_time, "result":report["result"], "message":report["message"], "status":"Done", "duration":duration}})
+        if "parentId" in report:
+            self.db.update_one({"_id": ObjectId(report["parentId"]), "reports.reportId":report["_id"]}, {"$set": {"reports.$.message": report["message"], "reports.$.result":report["result"], "reports.$.status":"Done", "reports.$.fail":report["fail"]}})
 
     def check_report_result(self, report):
         """
@@ -400,28 +403,75 @@ class ReportController(object):
             self.db.update_one({"_id": ObjectId(report_id)}, {"$set": {"end": current_time, "message":message, "result":result, "status":"Done", "duration":duration}})
 
     def get_duration(self, current_time, report):
+        """
+            Calculate the test duration
+
+            :current_time: the current time in milliseconds
+            :report: the report used to compare against the current time
+        """
         ms = int(current_time) - int(report["created"])
         return time.strftime('%M:%S', time.gmtime(ms/1000))
 
+    def get_dashboard(self, query):
+        query = self.validate_dashboard_query(query)
+        browsers = query["browsers"]
+        query.pop("browsers")
+        dashboard = {}
+        query["created"]["$gte"] = query["created"].pop("min")
+        query["created"]["$lte"] = query["created"].pop("max")
+        fields = self.return_specific_fields(False)
+        for browser in browsers:
+            query["browser"] = browser
+            reports = self.db.aggregate(query)
+            dashboard[browser] = reports
+        return self.common.create_response(200, dashboard)
+
+    def validate_dashboard_query(self, query):
+        validator = Validator(Schemas().dashboard, purge_unknown = True)
+        query = validator.normalized(query)
+        validation = validator.validate(query)
+        if not validation:
+            raise ValidationError(validator.errors)
+        return query
+
     def search(self, query, deep):
         """
-            Search reports via query
+            Search reports
 
             :query: the search query object
             :deep: specifies if this query is a deep search query
         """
+        reports = None
+        total = None
+        search_total = None
         query = self.validate_search(query)
-        query["pagination"].pop("pagination", None)
-        page_number = query["pagination"]["page"] - 1
-        skip = query["pagination"]["page"] * page_number
-        query["search"]["created"]["$gte"] = query["search"]["created"]["min"]
-        query["search"]["created"]["$lte"] = query["search"]["created"]["max"]
-        query["search"]["created"].pop("min", None)
-        query["search"]["created"].pop("max", None)
+        query["search"]["created"]["$gte"] = query["search"]["created"].pop("min")
+        query["search"]["created"]["$lte"] = query["search"]["created"].pop("max")
         fields = self.return_specific_fields(deep)
+        query, skip, page_number = self.get_pagination(query)
         reports, total, search_total = self.db.search(query["search"], skip, query["pagination"]["limit"], query["pagination"]["sort"])
         reports = self.check_search_results(query["search"]["kind"], reports, fields)
         return self.common.create_response(200, {"results": reports, "pagination": {"page":query["pagination"]["page"], "limit":query["pagination"]["limit"], "total": total, "amount":search_total}})
+
+    def set_query_date(self, query):
+        """
+            Rename date query keys
+        """
+        query["search"]["created"]["$gte"] = query["search"]["created"].pop("min")
+        query["search"]["created"]["$lte"] = query["search"]["created"].pop("max")
+        return query
+
+    def get_pagination(self, query):
+        """
+            Get pagination details
+            Return the skip value
+            Return the page number value
+        """
+        if not dashboard:
+            page_number = query["pagination"]["page"] - 1
+            skip = query["pagination"]["page"] * page_number
+            query["pagination"].pop("pagination", None)
+            return query, skip, page_number
 
     def check_search_results(self, kind, reports, fields):
         """
@@ -447,6 +497,9 @@ class ReportController(object):
         return reports
 
     def return_specific_fields(self, deep):
+        """
+            Specify what fields to return from database query
+        """
         if not deep:
             return {"path":1, "name":1, "message":1, "result": 1, "status": 1, "fail":1, 'kind':1, 'parentId':1}
 

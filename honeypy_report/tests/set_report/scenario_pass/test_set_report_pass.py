@@ -513,3 +513,22 @@ class Test:
         assertions.assert_report_status(report["reports"][0], "Done", True, end = True, message = "Success")
         assertions.assert_report_status(report["reports"][1], "Done", True, end = True, message = "Success")
         assertions.assert_report_status(report["reports"][2], "Done", True, end = True, message = "Success")
+
+    def test_verify_set_report_feature_c(self):
+        """
+            Verify the set report has been updated with the results of feature C
+        """
+        response = report_service.dashboard({"_id":report_id})
+
+        assert response.status_code == 200
+
+        report = response.json()
+        assert report["chrome"][0]["reports"][0]["message"] == "Success"
+        assert report["chrome"][0]["reports"][0]["status"] == "Done"
+        assert report["chrome"][0]["reports"][0]["result"] == True
+        assert report["chrome"][0]["reports"][1]["message"] == "Success"
+        assert report["chrome"][0]["reports"][1]["status"] == "Done"
+        assert report["chrome"][0]["reports"][1]["result"] == True
+        assert report["chrome"][0]["reports"][2]["message"] == "Success"
+        assert report["chrome"][0]["reports"][2]["status"] == "Done"
+        assert report["chrome"][0]["reports"][2]["result"] == True

@@ -549,3 +549,29 @@ class Test:
         assertions.assert_report_status(report["reports"][0], "Done", True, end = True, message = "Success")
         assertions.assert_report_status(report["reports"][1], "Done", False, end = True, message = "Failure")
         assertions.assert_report_status(report["reports"][2], "Done", True, end = True, message = "Success")
+
+    def test_verify_set_report_feature_c(self):
+        """
+            Verify the set report has been updated with the results of feature C
+        """
+        response = report_service.dashboard({"_id":report_id})
+
+        assert response.status_code == 200
+
+        data = response.json()
+        found = False
+        for item in data["chrome"]:
+            print(item)
+            if item["_id"] == report["name"]:
+                found = True
+                assert item["reports"][0]["message"] == "Success"
+                assert item["reports"][0]["status"] == "Done"
+                assert item["reports"][0]["result"] == True
+                assert item["reports"][1]["message"] == "Failure"
+                assert item["reports"][1]["status"] == "Done"
+                assert item["reports"][1]["result"] == False
+                assert item["reports"][2]["message"] == "Success"
+                assert item["reports"][2]["status"] == "Done"
+                assert item["reports"][2]["result"] == True
+                break
+        assert found == True
