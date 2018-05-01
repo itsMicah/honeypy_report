@@ -87,7 +87,7 @@ def finish(report_id):
 def search():
     try:
         deep = request.args.get('deep')
-        return ReportController().search(request.get_json(), deep, dashboard)
+        return ReportController().search(request.get_json(), deep)
     except ValidationError as error:
         return Common().create_response(400, error.errors)
 
