@@ -554,14 +554,13 @@ class Test:
         """
             Verify the set report has been updated with the results of feature C
         """
-        response = report_service.dashboard({"_id":report_id})
+        response = report_service.dashboard({})
 
         assert response.status_code == 200
 
         data = response.json()
         found = False
         for item in data["chrome"]:
-            print(item)
             if item["_id"] == report["name"]:
                 found = True
                 assert item["reports"][0]["message"] == "Success"

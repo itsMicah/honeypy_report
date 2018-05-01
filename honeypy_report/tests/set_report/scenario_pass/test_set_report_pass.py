@@ -518,17 +518,23 @@ class Test:
         """
             Verify the set report has been updated with the results of feature C
         """
-        response = report_service.dashboard({"_id":report_id})
+        response = report_service.dashboard({})
 
         assert response.status_code == 200
 
-        report = response.json()
-        assert report["chrome"][0]["reports"][0]["message"] == "Success"
-        assert report["chrome"][0]["reports"][0]["status"] == "Done"
-        assert report["chrome"][0]["reports"][0]["result"] == True
-        assert report["chrome"][0]["reports"][1]["message"] == "Success"
-        assert report["chrome"][0]["reports"][1]["status"] == "Done"
-        assert report["chrome"][0]["reports"][1]["result"] == True
-        assert report["chrome"][0]["reports"][2]["message"] == "Success"
-        assert report["chrome"][0]["reports"][2]["status"] == "Done"
-        assert report["chrome"][0]["reports"][2]["result"] == True
+        data = response.json()
+        found = False
+        for item in data["chrome"]:
+            if item["_id"] == report["name"]:
+                found = True
+                assert item["reports"][0]["message"] == "Success"
+                assert item["reports"][0]["status"] == "Done"
+                assert item["reports"][0]["result"] == True
+                assert item["reports"][1]["message"] == "Success"
+                assert item["reports"][1]["status"] == "Done"
+                assert item["reports"][1]["result"] == True
+                assert item["reports"][2]["message"] == "Success"
+                assert item["reports"][2]["status"] == "Done"
+                assert item["reports"][2]["result"] == True
+                break
+        assert found == True
