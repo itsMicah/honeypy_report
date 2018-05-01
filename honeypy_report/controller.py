@@ -209,7 +209,6 @@ class ReportController(object):
             :data: the data being add to the report
         """
         data = self.validate_add(report_id, data)
-        print(data)
         if data["type"] == "step":
             self.add_test(report_id, data)
         elif data["type"] == "scenario":
@@ -292,8 +291,6 @@ class ReportController(object):
             :report_id: the report id
             :data: the test object
         """
-        print("HI")
-        print(data["result"])
         if data["result"] == False:
             report = self.db.find_one({"_id":ObjectId(report_id)})
             self.update_set_result(report, data)
