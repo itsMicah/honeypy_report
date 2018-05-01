@@ -413,6 +413,9 @@ class ReportController(object):
         return time.strftime('%M:%S', time.gmtime(ms/1000))
 
     def get_dashboard(self, query):
+        """
+            Get the full dashboard
+        """
         query = self.validate_dashboard_query(query)
         browsers = query["browsers"]
         query.pop("browsers")
@@ -427,6 +430,11 @@ class ReportController(object):
         return self.common.create_response(200, dashboard)
 
     def validate_dashboard_query(self, query):
+        """
+            Validate the dashboard search query
+
+            :query: the search query to get the dashboard data
+        """
         validator = Validator(Schemas().dashboard, purge_unknown = True)
         query = validator.normalized(query)
         validation = validator.validate(query)
@@ -467,11 +475,10 @@ class ReportController(object):
             Return the skip value
             Return the page number value
         """
-        if not dashboard:
-            page_number = query["pagination"]["page"] - 1
-            skip = query["pagination"]["page"] * page_number
-            query["pagination"].pop("pagination", None)
-            return query, skip, page_number
+        page_number = query["pagination"]["page"] - 1
+        skip = query["pagination"]["page"] * page_number
+        query["pagination"].pop("pagination", None)
+        return query, skip, page_number
 
     def check_search_results(self, kind, reports, fields):
         """
