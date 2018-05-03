@@ -1,5 +1,5 @@
 from copy import deepcopy
-from honeypy.api.common import Common
+from honeypy.common import Common
 from honeypy_report import api
 
 class Schemas(object):
