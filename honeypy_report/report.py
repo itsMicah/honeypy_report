@@ -17,24 +17,24 @@ from flask_basicauth import BasicAuth
 from honeypy.api.common import Common
 from honeypy.errors import ValidationError
 
-from honeypy_report import report_api
+from honeypy_report import api
 from honeypy_report.controller import ReportController
 
 """
     Allow Cross origin requests while in development
 """
-CORS(report_api, resources={r'\/?.*': {'origins': ['http://localhost:4200', "http://frontend-service.default.svc.cluster.local"]}})
+CORS(api, resources={r'\/?.*': {'origins': ['http://localhost:4200', "http://frontend-service.default.svc.cluster.local"]}})
 
 """
     Instantiate Common
 """
 common = Common()
-basic_auth = BasicAuth(report_api)
+basic_auth = BasicAuth(api)
 
 """
     Create a report endpoint
 """
-@report_api.route("/", methods = ["POST"])
+@api.route("/", methods = ["POST"])
 @basic_auth.required
 def post_report():
     try:
@@ -45,12 +45,12 @@ def post_report():
 """
     Get a report by ID endpoint
 """
-@report_api.route("/<report_id>", methods = ["GET"])
+@api.route("/<report_id>", methods = ["GET"])
 @basic_auth.required
 def get_report(report_id):
     return ReportController().get(report_id)
 
-@report_api.route("/<report_id>", methods = ["PATCH"])
+@api.route("/<report_id>", methods = ["PATCH"])
 @basic_auth.required
 def patch_report(report_id):
     try:
@@ -61,7 +61,7 @@ def patch_report(report_id):
 """
     Add test objects to a feature report
 """
-@report_api.route("/<report_id>/add", methods = ["POST"])
+@api.route("/<report_id>/add", methods = ["POST"])
 @basic_auth.required
 def add_test(report_id):
     try:
@@ -73,7 +73,7 @@ def add_test(report_id):
     Finish a feature report
     Also update a set report result if the feature is part of a set run
 """
-@report_api.route("/<report_id>/finish", methods = ["GET"])
+@api.route("/<report_id>/finish", methods = ["GET"])
 @basic_auth.required
 def finish(report_id):
     try:
@@ -82,7 +82,7 @@ def finish(report_id):
     except ValidationError as error:
         return Common().create_response(400, error.errors)
 
-@report_api.route("/search", methods = ["POST"])
+@api.route("/search", methods = ["POST"])
 @basic_auth.required
 def search():
     try:
@@ -91,7 +91,7 @@ def search():
     except ValidationError as error:
         return Common().create_response(400, error.errors)
 
-@report_api.route("/dashboard", methods = ["POST"])
+@api.route("/dashboard", methods = ["POST"])
 @basic_auth.required
 def dashboard():
     try:
@@ -103,7 +103,7 @@ def main():
     """
         Start the service
     """
-    if report_api.config["PRODUCTION"]:
-        report_api.run(host=report_api.config["IP"], port=report_api.config["PORT"], threaded=True)
+    if api.config["PRODUCTION"]:
+        api.run(host=api.config["IP"], port=api.config["PORT"], threaded=True)
     else:
-        report_api.run(host=report_api.config["REPORT_IP"], port=report_api.config["REPORT_PORT"], threaded=True)
+        api.run(host=api.config["REPORT_IP"], port=api.config["REPORT_PORT"], threaded=True)

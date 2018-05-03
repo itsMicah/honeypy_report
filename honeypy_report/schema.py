@@ -1,6 +1,6 @@
 from copy import deepcopy
 from honeypy.api.common import Common
-from honeypy_report import report_api
+from honeypy_report import api
 
 class Schemas(object):
 
@@ -63,8 +63,8 @@ class Schemas(object):
             "browser": {
                 "type": "string",
                 "required": True,
-                "allowed": report_api.config["BROWSERS"],
-                "default": report_api.config["BROWSERS"][0]
+                "allowed": api.config["BROWSERS"],
+                "default": api.config["BROWSERS"][0]
             }
         }
 
@@ -317,8 +317,8 @@ class Schemas(object):
             },
             "browsers": {
                 "type": "list",
-                "default": report_api.config["BROWSERS"],
-                "allowed": report_api.config["BROWSERS"]
+                "default": api.config["BROWSERS"],
+                "allowed": api.config["BROWSERS"]
             },
             "name": {
                 "type": "string"

@@ -10,16 +10,17 @@ from bson.errors import InvalidId
 from honeypy.errors import CustomFileNotFound, ValidationError
 
 from honeypy_report.schema import Schemas
-from honeypy_report import report_api
-from honeypy.api.common import Common, Database
+from honeypy_report import api
+from honeypy.common import Common
+from honeypy.database import Database
 
 class ReportController(object):
 
     def __init__(self):
-        self.config = report_api.config
+        self.config = api.config
         self.common = Common()
         self.ifFinish = False
-        self.db = Database(report_api.config['DATABASE_IP'], report_api.config['DATABASE_PORT'], report_api.config['REPORT_DB'])
+        self.db = Database(api.config['DATABASE_IP'], api.config['DATABASE_PORT'], api.config['REPORT_DB_NAME'], api.config['REPORT_DB_COLLECTION'])
 
     def get(self, report_id):
         """
