@@ -14,7 +14,7 @@ from flask import Flask, request
 from flask_cors import CORS
 from flask_basicauth import BasicAuth
 
-from honeypy.api.common import Common
+from honeypy.common import Common
 from honeypy.errors import ValidationError
 
 from honeypy_report import api
