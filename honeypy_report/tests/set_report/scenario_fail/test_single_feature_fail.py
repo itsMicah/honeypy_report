@@ -550,7 +550,7 @@ class Test:
         assertions.assert_report_status(report["reports"][1], "Done", False, end = True, message = "Failure")
         assertions.assert_report_status(report["reports"][2], "Done", True, end = True, message = "Success")
 
-    def test_verify_set_report_feature_c(self):
+    def test_verify_dashboard_response(self):
         """
             Verify the set report has been updated with the results of feature C
         """
