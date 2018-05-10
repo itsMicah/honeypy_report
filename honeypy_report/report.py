@@ -99,12 +99,11 @@ def dashboard():
     except ValidationError as error:
         return Common().create_response(400, error.errors)
 
-def main(environ, start_response):
+def main():
     """
         Start the service
     """
-    # if api.config["PRODUCTION"]:
-    # api.run()
-    # else:
-    #     print(api.config["REPORT_PORT"])
-    api.run(host=api.config["REPORT_IP"], port=api.config["REPORT_PORT"], threaded=True)
+    if api.config["PRODUCTION"]:
+        api.run(host=api.config["IP"], port=api.config["PORT"])
+    else:
+        api.run(host=api.config["REPORT_IP"], port=api.config["REPORT_PORT"])
