@@ -39,4 +39,4 @@ RUN cd honeypy/ && python setup.py install
 EXPOSE 80
 
 # start service
-gunicorn honeypy_report.report:api --workers=4 -b 0.0.0.0:80
+CMD gunicorn honeypy_report.report:api --workers=4 -b 0.0.0.0:80
