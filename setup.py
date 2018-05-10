@@ -29,7 +29,8 @@ setup(
         "pymongo",
         "Flask-BasicAuth",
         "pytest",
-        "requests"
+        "requests",
+        "gunicorn"
     ],
     classifiers = [
         "'Programming Language :: Python :: 3.6'"
