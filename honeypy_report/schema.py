@@ -57,9 +57,8 @@ class Schemas(object):
             },
             "environment": {
                 "type": "string",
-                "required": True,
                 "default": None,
-                "empty": True
+                "nullable": True
             },
             "queue": {
                 "type": "string",
