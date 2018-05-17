@@ -420,7 +420,6 @@ class ReportController(object):
         dashboard = {}
         query["created"]["$gte"] = query["created"].pop("min")
         query["created"]["$lte"] = query["created"].pop("max")
-        fields = self.return_specific_fields(False)
         for browser in browsers:
             query["browser"] = browser
             reports = self.db.aggregate(query)
