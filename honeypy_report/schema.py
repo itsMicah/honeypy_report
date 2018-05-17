@@ -55,6 +55,12 @@ class Schemas(object):
                 "type": "string",
                 "required": True
             },
+            "environment": {
+                "type": "string",
+                "required": True,
+                "default": None,
+                "empty": True
+            },
             "queue": {
                 "type": "string",
                 "required": True,
