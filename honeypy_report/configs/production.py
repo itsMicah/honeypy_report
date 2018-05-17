@@ -35,11 +35,11 @@ SET_DB_NAME="set"
 SET_DB_COLLECTION="set"
 
 # Environment Service Configs
-ENVIRONMENT_IP="environment-service"
-ENVIRONMENT_PORT=80
-ENVIRONMENT_URL="http://" + ENVIRONMENT_IP + ":" + str(ENVIRONMENT_PORT)
-ENVIRONMENT_DB_NAME="environment"
-ENVIRONMENT_DB_COLLECTION="environment"
+ENV_IP="environment-service"
+ENV_PORT=80
+ENV_URL="http://" + ENV_IP + ":" + str(ENV_PORT)
+ENV_DB_NAME="environment"
+ENV_DB_COLLECTION="environment"
 
 # Database Configs
 DATABASE_IP="honeypy-db-mongodb"
