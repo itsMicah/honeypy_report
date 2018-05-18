@@ -5,6 +5,7 @@ from flask import Flask
 from copy import deepcopy
 from honeypy.api.test import TestService
 from honeypy.api.set import SetService
+from honeypy.api.environment import EnvironmentService
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
 from honeypy.errors import CustomFileNotFound, ValidationError
@@ -20,6 +21,7 @@ class ReportController(object):
         self.config = api.config
         self.common = Common()
         self.ifFinish = False
+        self.environment = {}
         self.db = Database(api.config['DATABASE_IP'], api.config['DATABASE_PORT'], api.config['REPORT_DB_NAME'], api.config['REPORT_DB_COLLECTION'])
 
     def get(self, report_id):
@@ -59,6 +61,7 @@ class ReportController(object):
         """
         data = self.validate_report(data)
         response = None
+        data = self.get_environment_variables(data, init = True)
         if data["kind"] == "set":
             response = self.create_set_report(data)
         elif data["kind"] == "feature":
@@ -76,11 +79,20 @@ class ReportController(object):
 
             :data: the request payload
         """
+        data = self.check_base_url(data)
         response = self.db.insert_one(data)
         for path in data["features"]:
             parentId = response.inserted_id
             self.create_set_feature(path, parentId, data)
         return response
+
+    def get_environment_variables(self, data, init = False):
+        if initiate:
+            response = EnvironmentService().get(data["environment"])
+            if response.status_code == 200:
+                self.environment = response.json()
+        data["environment"] = self.environment
+        return data
 
     def create_set_feature(self, path, parentId, _set):
         """
@@ -115,6 +127,15 @@ class ReportController(object):
             feature["host"] = setReport["host"]
             feature["environment"] = setReport["environment"]
         return feature
+
+    def check_base_url(self, data):
+        """
+            Check if environment contains an overwriting base url
+            If so, change the report base url
+        """
+        if "base_url" in data["environment"]["variables"]:
+            data["url"] = data["environment"]["variables"]["base_url"]
+        return data
 
     def validate_report(self, data, update = False, normalize = True):
         """
