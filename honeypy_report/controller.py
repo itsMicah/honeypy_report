@@ -113,6 +113,7 @@ class ReportController(object):
             feature["browser"] = setReport["browser"]
             feature["url"] = setReport["url"]
             feature["host"] = setReport["host"]
+            feature["environment"] = setReport["environment"]
         return feature
 
     def validate_report(self, data, update = False, normalize = True):
