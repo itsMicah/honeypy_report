@@ -62,6 +62,7 @@ class ReportController(object):
         data = self.validate_report(data)
         response = None
         data = self.get_environment_variables(data, init = True)
+        data = self.check_base_url(data)
         if data["kind"] == "set":
             response = self.create_set_report(data)
         elif data["kind"] == "feature":
@@ -79,7 +80,6 @@ class ReportController(object):
 
             :data: the request payload
         """
-        data = self.check_base_url(data)
         response = self.db.insert_one(data)
         for path in data["features"]:
             parentId = response.inserted_id
@@ -87,10 +87,11 @@ class ReportController(object):
         return response
 
     def get_environment_variables(self, data, init = False):
-        if initiate:
+        if init:
             response = EnvironmentService().get(data["environment"])
             if response.status_code == 200:
                 self.environment = response.json()
+                self.variables = self.environment["variables"]
         data["environment"] = self.environment
         return data
 
