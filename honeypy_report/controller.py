@@ -33,7 +33,6 @@ class ReportController(object):
         """
         report = self.db.find_one({"_id":ObjectId(report_id)})
         if report:
-            report = self.get_set_features(report)
             return self.common.create_response(200, report)
         else:
             return self.common.create_response(400, {"reportId": [f"Report ID does not exist ({report_id})"]})
@@ -110,7 +109,9 @@ class ReportController(object):
             data["parentId"] = str(parentId)
             response = self.create(data)
             feature["reportId"] = json.loads(response.response[0])["id"]
-            feature["message"] = "Success"
+            feature["message"] = None
+            feature["status"] = "Queued"
+            feature["result"] = None
             self.db.update_one({"_id":ObjectId(parentId)}, {"$push":{"reports": feature}})
         else:
             feature = {"kind":"feature", "path":path, "result":None, "message":None, "status":None}
@@ -134,8 +135,9 @@ class ReportController(object):
             Check if environment contains an overwriting base url
             If so, change the report base url
         """
-        if "base_url" in data["environment"]["variables"]:
-            data["url"] = data["environment"]["variables"]["base_url"]
+        if data["environment"]:
+            if "base_url" in data["environment"]["variables"]:
+                data["url"] = data["environment"]["variables"]["base_url"]
         return data
 
     def validate_report(self, data, update = False, normalize = True):
@@ -323,13 +325,13 @@ class ReportController(object):
 
     def update_set_result(self, report, data):
         """
-            Update a set report if the a feature failed
+            Update a set report if a feature failed
 
             :report: the report
             :data: the test object
         """
         if "parentId" in report:
-            self.db.update_one({"_id":ObjectId(report["parentId"])}, {"$set": {"result":False, "message":"Failure"}})
+            self.db.update_one({"_id":ObjectId(report["parentId"]), "reports.reportId":report["_id"]}, {"$set": {"result":False, "message":"Failure", "reports.$.result":False, "reports.$.message":"Failure"}})
 
     def update_feature_result(self, report, data):
         """
@@ -349,6 +351,21 @@ class ReportController(object):
         """
         if "scenarioId" in data:
             self.db.update_one({"_id":ObjectId(report["_id"]), "tests.scenarioId": data["scenarioId"]}, {'$set': {'tests.$.result':False, "tests.$.message":"Failure"}})
+
+    def update_status(self, _type, report_id, path):
+        if _type == "start":
+            return self.start(report_id, path)
+        elif _type == "finish":
+            return self.finish(report_id, path)
+
+    def start(self, report_id, path):
+        report = self.db.find_one({"_id":ObjectId(report_id)})
+        if "parentId" in report:
+            response = self.db.update_one({"_id":ObjectId(report["parentId"]), "reports.reportId":report_id}, {"$set":{"status":"Running", "reports.$.status":"Running"}})
+            response = self.db.update_one({"_id":ObjectId(report_id)}, {"$set":{"status":"Running"}})
+        else:
+            response = self.db.update_one({"_id":ObjectId(report["_id"])}, {"$set":{"status":"Running"}})
+        return self.common.create_response(204)
 
     def finish(self, report_id, path):
         """
