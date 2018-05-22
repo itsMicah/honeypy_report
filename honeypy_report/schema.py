@@ -35,6 +35,15 @@ class Schemas(object):
                 "default": None,
                 "nullable": True
             },
+            "status": {
+                "type": "string",
+                "default": "Queued"
+            },
+            "message": {
+                "type": "string",
+                "nullable": True,
+                "default": None
+            },
             "fail": {
                 "type": "boolean",
                 "default": False
@@ -46,10 +55,6 @@ class Schemas(object):
             "url": {
                 "type": "string",
                 "default": ""
-            },
-            "status": {
-                "type": "string",
-                "default": "Queued"
             },
             "name": {
                 "type": "string",
@@ -94,9 +99,6 @@ class Schemas(object):
                 }
             },
             "parentId": {
-                "type": "string"
-            },
-            "message": {
                 "type": "string"
             }
         }
