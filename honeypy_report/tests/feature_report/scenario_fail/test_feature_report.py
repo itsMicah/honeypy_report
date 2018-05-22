@@ -197,7 +197,7 @@ class Test:
         """
             Finish the feature report
         """
-        response = report_service.finish(report_id)
+        response = report_service.status("finish", report_id)
         assert response.status_code == 204
 
     def test_verify_finish(self):
