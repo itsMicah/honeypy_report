@@ -168,6 +168,7 @@ class Test:
 
     def test_subtest_1_scenario_1_feature_1(self):
         """
+            Verify the step was added to the scenario
         """
         response = report_service.get(feature_1_id)
         assert response.status_code == 200
