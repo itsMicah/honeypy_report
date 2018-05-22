@@ -37,21 +37,6 @@ class ReportController(object):
         else:
             return self.common.create_response(400, {"reportId": [f"Report ID does not exist ({report_id})"]})
 
-    def get_set_features(self, report):
-        """
-            Get all feature reports of a set and combine them with set report
-
-            :report: the set report
-        """
-        if report["kind"] == "set":
-            for feature in report["reports"]:
-                index = report["reports"].index(feature)
-                if "reportId" in feature and feature["reportId"]:
-                    feature_report = self.db.find_one({"_id":ObjectId(feature["reportId"])})
-                    feature_report["_id"] = str(feature_report["_id"])
-                    report["reports"][index] = feature_report
-        return report
-
     def create(self, data):
         """
             Create a report
@@ -353,12 +338,23 @@ class ReportController(object):
             self.db.update_one({"_id":ObjectId(report["_id"]), "tests.scenarioId": data["scenarioId"]}, {'$set': {'tests.$.result':False, "tests.$.message":"Failure"}})
 
     def update_status(self, _type, report_id, path):
+        """
+            Check what status
+        """
         if _type == "start":
             return self.start(report_id, path)
         elif _type == "finish":
             return self.finish(report_id, path)
+        else:
+            return self.common.create_response(400, {"type": [f"Type value of '{_type}' is invalid"]})
 
     def start(self, report_id, path):
+        """
+            Change report status to running
+
+            :report_id: the id of the report
+            :path: the path string of the test
+        """
         report = self.db.find_one({"_id":ObjectId(report_id)})
         if "parentId" in report:
             response = self.db.update_one({"_id":ObjectId(report["parentId"]), "reports.reportId":report_id}, {"$set":{"status":"Running", "reports.$.status":"Running"}})
