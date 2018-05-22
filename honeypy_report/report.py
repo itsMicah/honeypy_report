@@ -69,16 +69,26 @@ def add_test(report_id):
     except ValidationError as error:
         return Common().create_response(400, error.errors)
 
+@api.route("/<report_id>/start", methods = ["GET"])
+@basic_auth.required
+def start(report_id):
+    try:
+        path = request.args.get('path')
+        return ReportController().start(report_id, path)
+    except ValidationError as error:
+        return Common().create_response(400, error.errors)
+
 """
     Finish a feature report
     Also update a set report result if the feature is part of a set run
 """
-@api.route("/<report_id>/finish", methods = ["GET"])
+@api.route("/<report_id>/status", methods = ["GET"])
 @basic_auth.required
 def finish(report_id):
     try:
         path = request.args.get('path')
-        return ReportController().finish(report_id, path)
+        type = request.args.get('type')
+        return ReportController().update_status(type, report_id, path)
     except ValidationError as error:
         return Common().create_response(400, error.errors)
 
