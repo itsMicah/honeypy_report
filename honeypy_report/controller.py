@@ -135,8 +135,9 @@ class ReportController(object):
             Check if environment contains an overwriting base url
             If so, change the report base url
         """
-        if "base_url" in data["environment"]["variables"]:
-            data["url"] = data["environment"]["variables"]["base_url"]
+        if data["environment"]:
+            if "base_url" in data["environment"]["variables"]:
+                data["url"] = data["environment"]["variables"]["base_url"]
         return data
 
     def validate_report(self, data, update = False, normalize = True):
