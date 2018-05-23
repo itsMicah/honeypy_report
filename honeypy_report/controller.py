@@ -87,12 +87,13 @@ class ReportController(object):
         return response
 
     def get_environment_variables(self, data, init = False):
-        if init:
-            response = EnvironmentService().get(data["environment"])
-            if response.status_code == 200:
-                self.environment = response.json()
-                self.variables = self.environment["variables"]
-        data["environment"] = self.environment
+        if data["environment"]:
+            if init:
+                response = EnvironmentService().get(data["environment"])
+                if response.status_code == 200:
+                    self.environment = response.json()
+                    self.variables = self.environment["variables"]
+            data["environment"] = self.environment
         return data
 
     def create_set_feature(self, path, parentId, _set):
