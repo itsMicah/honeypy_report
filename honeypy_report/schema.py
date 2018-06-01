@@ -62,6 +62,7 @@ class Schemas(object):
             },
             "environment": {
                 "type": "string",
+                "required": True,
                 "default": None,
                 "nullable": True
             },
@@ -316,8 +317,11 @@ class Schemas(object):
                     "$lte": Common().get_timestamp()
                 }
             },
-            "host": {
-                "type": "string"
+            "hosts": {
+                "type": "list",
+                "schema": {
+                    "type":"string"
+                }
             },
             "url": {
                 "type": "string"
@@ -327,7 +331,8 @@ class Schemas(object):
                 "default": api.config["BROWSERS"],
                 "allowed": api.config["BROWSERS"]
             },
-            "name": {
-                "type": "string"
+            "environment": {
+                "type": "string",
+                "required": True
             }
         }
