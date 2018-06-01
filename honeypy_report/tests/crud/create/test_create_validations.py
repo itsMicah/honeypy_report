@@ -1,6 +1,6 @@
 import pytest
 
-from honeypy.tests.fixtures.report_assertions import ReportAssertions
+from honeypy.tests.assertions.report import ReportAssertions
 from honeypy.api.report import ReportService
 
 def setup_module(module):

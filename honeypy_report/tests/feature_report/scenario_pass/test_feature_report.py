@@ -1,7 +1,7 @@
 import pytest
 from copy import deepcopy
 
-from honeypy.tests.fixtures.report_assertions import ReportAssertions
+from honeypy.tests.assertions.report import ReportAssertions
 
 from honeypy_report.tests.feature_report.scenario_pass import (
     FEATURE,

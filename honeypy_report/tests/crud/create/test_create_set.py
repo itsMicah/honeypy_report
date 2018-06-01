@@ -5,7 +5,7 @@ from honeypy_report.tests.crud.create import (
     DEFAULT_SET_REPORT,
     FEATURES
 )
-from honeypy.tests.fixtures.report_assertions import ReportAssertions
+from honeypy.tests.assertions.report import ReportAssertions
 from honeypy.api.report import ReportService
 from honeypy.api.test import TestService
 

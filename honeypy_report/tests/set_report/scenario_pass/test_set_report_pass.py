@@ -16,7 +16,7 @@ from honeypy_report.tests.set_report.scenario_pass import (
 from honeypy.api.report import ReportService
 from honeypy.api.test import TestService
 from honeypy.api.set import SetService
-from honeypy.tests.fixtures.report_assertions import ReportAssertions
+from honeypy.tests.assertions.report import ReportAssertions
 
 def setup_module(module):
     """
