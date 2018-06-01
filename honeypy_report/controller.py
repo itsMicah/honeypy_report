@@ -72,7 +72,6 @@ class ReportController(object):
         return response
 
     def get_environment_variables(self, data, init = False):
-<<<<<<< HEAD
         response = EnvironmentService().get(data["environment"])
         if response.status_code == 200:
             self.environment = response.json()
@@ -80,15 +79,6 @@ class ReportController(object):
         else:
             self.environment = {"name":data["environment"], "variables":{}}
         data["environment"] = self.environment
-=======
-        if data["environment"]:
-            if init:
-                response = EnvironmentService().get(data["environment"])
-                if response.status_code == 200:
-                    self.environment = response.json()
-                    self.variables = self.environment["variables"]
-            data["environment"] = self.environment
->>>>>>> master
         return data
 
     def create_set_feature(self, path, parentId, _set):
@@ -132,11 +122,7 @@ class ReportController(object):
             Check if environment contains an overwriting base url
             If so, change the report base url
         """
-<<<<<<< HEAD
         if "environment" in data:
-=======
-        if data["environment"]:
->>>>>>> master
             if "base_url" in data["environment"]["variables"]:
                 data["url"] = data["environment"]["variables"]["base_url"]
         return data
