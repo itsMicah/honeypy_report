@@ -47,6 +47,7 @@ class ReportController(object):
         response = None
         data = self.get_environment_variables(data, init = True)
         data = self.check_base_url(data)
+        print(data)
         if data["kind"] == "set":
             response = self.create_set_report(data)
         elif data["kind"] == "feature":
@@ -71,11 +72,12 @@ class ReportController(object):
         return response
 
     def get_environment_variables(self, data, init = False):
-        if init:
-            response = EnvironmentService().get(data["environment"])
-            if response.status_code == 200:
-                self.environment = response.json()
-                self.variables = self.environment["variables"]
+        response = EnvironmentService().get(data["environment"])
+        if response.status_code == 200:
+            self.environment = response.json()
+            self.variables = self.environment["variables"]
+        else:
+            self.environment = {"name":data["environment"], "variables":{}}
         data["environment"] = self.environment
         return data
 
@@ -120,7 +122,7 @@ class ReportController(object):
             Check if environment contains an overwriting base url
             If so, change the report base url
         """
-        if data["environment"]:
+        if "environment" in data:
             if "base_url" in data["environment"]["variables"]:
                 data["url"] = data["environment"]["variables"]["base_url"]
         return data
@@ -133,7 +135,7 @@ class ReportController(object):
             :update: should service validate report as an update action
             :normalize: should default values be defined
         """
-        validator = Validator(Schemas().report, allow_unknown = True, ignore_none_values = True)
+        validator = Validator(Schemas().report, allow_unknown = True)
         data = self.normalize(normalize, data, validator)
         validation = validator.validate(data, update = update)
         if not validation:
@@ -456,10 +458,17 @@ class ReportController(object):
         dashboard = {}
         query["created"]["$gte"] = query["created"].pop("min")
         query["created"]["$lte"] = query["created"].pop("max")
+        query["environment.name"] = query["environment"]
+        query.pop("environment")
+        if len(query["hosts"]) > 0:
+            hosts = query["hosts"]
+            query["host"] = {"$in":hosts}
+        query.pop("hosts")
         for browser in browsers:
             query["browser"] = browser
             reports = self.db.aggregate(query)
             dashboard[browser] = reports
+        dashboard = self.organize_dashboard(dashboard, browsers)
         return self.common.create_response(200, dashboard)
 
     def validate_dashboard_query(self, query):
@@ -474,6 +483,46 @@ class ReportController(object):
         if not validation:
             raise ValidationError(validator.errors)
         return query
+
+    def organize_dashboard(self, dashboard, browsers):
+        """
+            Create a new dashboard object
+            Organize the reports by browser
+
+            :dashboard: the returned mongo query organized by set/browser
+            :browsers: all the browsers searched in the query
+        """
+        new_dashboard = {}
+        for browser,reports in dashboard.items():
+            for report in reports:
+                    name = report["_id"]
+                    new_dashboard = self.add_set_to_dashboard(name, new_dashboard, browsers)
+                    new_dashboard = self.add_report_to_dashboard_set(new_dashboard, name, browser, report)
+        return new_dashboard
+
+
+    def add_set_to_dashboard(self, name, new_dashboard, browsers):
+        """
+            Add set name to the new dashboard object
+            We want to add each set returned to the object
+
+            :name: the name of the set
+            :new_dashboard: the new dashboard object
+            :browsers: the browsers used in the query
+        """
+        if name not in new_dashboard:
+            new_dashboard[name] = {}
+            for supported_browser in browsers:
+                new_dashboard[name][supported_browser] = []
+        return new_dashboard
+
+    def add_report_to_dashboard_set(self, new_dashboard, name, browser, report):
+        """
+            Add a set report to the dashboard
+            Insert the set report within the set name and browser/device type
+        """
+        new_dashboard[name][browser].append(report)
+        return new_dashboard
 
     def search(self, query, deep):
         """
