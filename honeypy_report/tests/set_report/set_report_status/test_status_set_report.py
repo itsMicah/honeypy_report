@@ -98,6 +98,7 @@ class Test:
         assert report["reports"][0]["status"] == "Queued"
         assert report["reports"][0]["message"] == None
         assert report["reports"][0]["result"] == None
+        assert report["reports"][0]["fail"] == False
 
     def test_default_feature_2_status(self):
         """
@@ -106,6 +107,7 @@ class Test:
         assert report["reports"][1]["status"] == "Queued"
         assert report["reports"][1]["message"] == None
         assert report["reports"][1]["result"] == None
+        assert report["reports"][1]["fail"] == False
 
     def test_default_feature_3_status(self):
         """
@@ -114,6 +116,7 @@ class Test:
         assert report["reports"][2]["status"] == "Queued"
         assert report["reports"][2]["message"] == None
         assert report["reports"][2]["result"] == None
+        assert report["reports"][2]["fail"] == False
 
     def test_start_feature_1(self):
         """
@@ -135,12 +138,15 @@ class Test:
         assert data["reports"][0]["status"] == "Running"
         assert data["reports"][0]["message"] == None
         assert data["reports"][0]["result"] == None
+        assert data["reports"][0]["fail"] == False
         assert data["reports"][1]["status"] == "Queued"
         assert data["reports"][1]["message"] == None
         assert data["reports"][1]["result"] == None
+        assert data["reports"][1]["fail"] == False
         assert data["reports"][2]["status"] == "Queued"
         assert data["reports"][2]["message"] == None
         assert data["reports"][2]["result"] == None
+        assert data["reports"][2]["fail"] == False
 
     def test_feature_1_start_status_1(self):
         """
@@ -195,12 +201,15 @@ class Test:
         assert data["reports"][0]["status"] == "Running"
         assert data["reports"][0]["message"] == None
         assert data["reports"][0]["result"] == None
+        assert data["reports"][0]["fail"] == False
         assert data["reports"][1]["status"] == "Running"
         assert data["reports"][1]["message"] == None
         assert data["reports"][1]["result"] == None
+        assert data["reports"][1]["fail"] == False
         assert data["reports"][2]["status"] == "Queued"
         assert data["reports"][2]["message"] == None
         assert data["reports"][2]["result"] == None
+        assert data["reports"][2]["fail"] == False
 
     def test_feature_1_start_status_2(self):
         """
@@ -255,12 +264,15 @@ class Test:
         assert data["reports"][0]["status"] == "Done"
         assert data["reports"][0]["message"] == "Success"
         assert data["reports"][0]["result"] == True
+        assert data["reports"][0]["fail"] == False
         assert data["reports"][1]["status"] == "Running"
         assert data["reports"][1]["message"] == None
         assert data["reports"][1]["result"] == None
+        assert data["reports"][1]["fail"] == False
         assert data["reports"][2]["status"] == "Queued"
         assert data["reports"][2]["message"] == None
         assert data["reports"][2]["result"] == None
+        assert data["reports"][2]["fail"] == False
 
     def test_feature_1_finish_status_1(self):
         """
@@ -315,12 +327,15 @@ class Test:
         assert data["reports"][0]["status"] == "Done"
         assert data["reports"][0]["message"] == "Success"
         assert data["reports"][0]["result"] == True
+        assert data["reports"][0]["fail"] == False
         assert data["reports"][1]["status"] == "Running"
         assert data["reports"][1]["message"] == None
         assert data["reports"][1]["result"] == None
+        assert data["reports"][1]["fail"] == False
         assert data["reports"][2]["status"] == "Running"
         assert data["reports"][2]["message"] == None
         assert data["reports"][2]["result"] == None
+        assert data["reports"][2]["fail"] == False
 
     def test_feature_1_finish_status_2(self):
         """
@@ -435,12 +450,15 @@ class Test:
         assert data["reports"][0]["status"] == "Done"
         assert data["reports"][0]["message"] == "Success"
         assert data["reports"][0]["result"] == True
+        assert data["reports"][0]["fail"] == False
         assert data["reports"][1]["status"] == "Done"
         assert data["reports"][1]["message"] == "Success"
         assert data["reports"][1]["result"] == True
+        assert data["reports"][1]["fail"] == False
         assert data["reports"][2]["status"] == "Done"
         assert data["reports"][2]["message"] == "Success"
         assert data["reports"][2]["result"] == True
+        assert data["reports"][2]["fail"] == False
 
     def test_feature_1_finish_status_4(self):
         """
