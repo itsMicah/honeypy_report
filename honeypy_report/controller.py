@@ -47,7 +47,6 @@ class ReportController(object):
         response = None
         data = self.get_environment_variables(data, init = True)
         data = self.check_base_url(data)
-        print(data)
         if data["kind"] == "set":
             response = self.create_set_report(data)
         elif data["kind"] == "feature":
@@ -97,11 +96,13 @@ class ReportController(object):
             response = self.create(data)
             feature["reportId"] = json.loads(response.response[0])["id"]
             feature["message"] = None
+            feature["fail"] = data["fail"]
             feature["status"] = "Queued"
             feature["result"] = None
+            feature["parentId"] = str(parentId)
             self.db.update_one({"_id":ObjectId(parentId)}, {"$push":{"reports": feature}})
         else:
-            feature = {"kind":"feature", "path":path, "result":None, "message":None, "status":None}
+            feature = {"kind":"feature", "path":path, "result":None, "message":None, "status":None, "parentId":str(parentId), "fail":False}
             self.db.update_one({"_id":ObjectId(parentId)}, {"$push":{"reports": feature}})
 
     def check_inheritance(self, setId, feature):
@@ -364,6 +365,32 @@ class ReportController(object):
         else:
             response = self.db.update_one({"_id":ObjectId(report["_id"])}, {"$set":{"status":"Running"}})
         return self.common.create_response(204)
+
+    def rerun(self, feature_report_id, report):
+        """
+            Setup a feature report to be rerun
+        """
+        if "parentId" not in report:
+            raise ValidationError(errors = "Please provide a parent set ID with the report rerun request")
+        self.validate_report(report)
+        report.pop("end")
+        response = self.create_feature_report(report)
+        rerun_report_id = str(response.inserted_id)
+        set_report_id = report["parentId"]
+        feature = {
+            "path":report["path"],
+            "message":None,
+            "status":"Queued",
+            "result":None,
+            "fail":report["fail"],
+            "parentId":set_report_id,
+            "reportId":rerun_report_id
+        }
+        response = self.db.update_one({"_id":ObjectId(set_report_id), "reports.reportId":feature_report_id}, {"$set":{"reports.$":feature}})
+        if response.matched_count > 0:
+            return self.common.create_response(201, {"id":str(rerun_report_id)})
+        else:
+            return self.common.create_response(404, {"reportId":"Report ID could not be found"})
 
     def finish(self, report_id, path):
         """

@@ -70,6 +70,17 @@ def add_test(report_id):
         return Common().create_response(400, error.errors)
 
 """
+    Setup a feature to be rerun
+"""
+@api.route("/<report_id>/rerun", methods = ["POST"])
+@basic_auth.required
+def rerun_feature(report_id):
+    try:
+        return ReportController().rerun(report_id, request.get_json())
+    except ValidationError as error:
+        return Common().create_response(400, error.errors)
+
+"""
     Finish a feature report
     Also update a set report result if the feature is part of a set run
 """
