@@ -43,9 +43,9 @@ def setup_module(module):
     _set = create_set(SET, set_service)
     report_id = create_report(_set, report_service)
     report = get_report(report_id, report_service)
-    feature_1_id = report["reports"][0]["reportId"]
-    feature_2_id = report["reports"][1]["reportId"]
-    feature_3_id = report["reports"][2]["reportId"]
+    feature_1_id = report["reports"][0]["_id"]
+    feature_2_id = report["reports"][1]["_id"]
+    feature_3_id = report["reports"][2]["_id"]
 
 def setup_feature(feature, test_service, report_service):
     """
