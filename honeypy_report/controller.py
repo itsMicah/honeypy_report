@@ -1,4 +1,4 @@
-import time, json, pymongo, re, datetime
+import os, time, json, pymongo, re, datetime
 from cerberus import Validator
 from pymongo import MongoClient
 from flask import Flask
@@ -33,9 +33,25 @@ class ReportController(object):
         """
         report = self.db.find_one({"_id":ObjectId(report_id)})
         if report:
+            report = self.get_set_features(report)
             return self.common.create_response(200, report)
         else:
             return self.common.create_response(400, {"reportId": [f"Report ID does not exist ({report_id})"]})
+
+    def get_set_features(self, report):
+        """
+            Get all feature reports of a set and combine them with set report
+
+            :report: the set report
+        """
+        if report["kind"] == "set":
+            for feature in report["reports"]:
+                index = report["reports"].index(feature)
+                if "reportId" in feature and feature["reportId"]:
+                    feature_report = self.db.find_one({"_id":ObjectId(feature["reportId"])})
+                    feature_report["_id"] = str(feature_report["_id"])
+                    report["reports"][index] = feature_report
+        return report
 
     def create(self, data):
         """
@@ -88,7 +104,7 @@ class ReportController(object):
             :path: path to the feature
             :parentId: the set report ID
         """
-        feature = {"path":path}
+        feature = {"path":path,"name":os.path.basename(path)}
         response = TestService().get(path, "feature")
         if response.status_code == 200:
             data = response.json()
@@ -379,6 +395,7 @@ class ReportController(object):
         set_report_id = report["parentId"]
         feature = {
             "path":report["path"],
+            "name":report["name"],
             "message":None,
             "status":"Queued",
             "result":None,
