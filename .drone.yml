@@ -3,7 +3,6 @@ pipeline:
     when:
       event:
         branch: master
-        event: push
     image: python:alpine3.6
     commands:
       - python setup.py sdist
@@ -11,7 +10,6 @@ pipeline:
   publish:
     when:
       branch: master
-      event: push
     secrets:
       - docker_username
       - docker_password
