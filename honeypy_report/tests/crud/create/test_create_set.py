@@ -81,15 +81,19 @@ class TestCreateSet:
             Verify the first feature report within the set report
         """
         report = pytest.set_report["reports"][0]
-        pytest.feature_report_a_id = report["reportId"]
+        pytest.feature_report_a_id = report["_id"]
         response = report_service.get(pytest.feature_report_a_id)
 
         assert response.status_code == 200
         data = response.json()
         assert data["message"] == report["message"]
+        assert data["fail"] == report["fail"]
+        assert data["browser"] == report["browser"]
+        assert data["url"] == report["url"]
+        assert data["host"] == report["host"]
         assert data["status"] == report["status"]
         assert data["result"] == report["result"]
-        assert data["_id"] == report["reportId"]
+        assert data["_id"] == report["_id"]
         assert data["parentId"] == pytest.set_report["_id"]
 
     def test_feature_b_report(self):
@@ -97,7 +101,7 @@ class TestCreateSet:
             Verify the second feature report within the set report
         """
         report = pytest.set_report["reports"][1]
-        pytest.feature_report_b_id = report["reportId"]
+        pytest.feature_report_b_id = report["_id"]
         response = report_service.get(pytest.feature_report_b_id)
 
         assert response.status_code == 200
@@ -105,7 +109,11 @@ class TestCreateSet:
         assert data["message"] == report["message"]
         assert data["status"] == report["status"]
         assert data["result"] == report["result"]
-        assert data["_id"] == report["reportId"]
+        assert data["_id"] == report["_id"]
+        assert data["fail"] == report["fail"]
+        assert data["browser"] == report["browser"]
+        assert data["url"] == report["url"]
+        assert data["host"] == report["host"]
         assert data["parentId"] == pytest.set_report["_id"]
 
     def test_feature_c_report(self):
@@ -113,7 +121,7 @@ class TestCreateSet:
             Verify the third feature report within the set report
         """
         report = pytest.set_report["reports"][2]
-        pytest.feature_report_c_id = report["reportId"]
+        pytest.feature_report_c_id = report["_id"]
         response = report_service.get(pytest.feature_report_c_id)
 
         assert response.status_code == 200
@@ -121,5 +129,9 @@ class TestCreateSet:
         assert data["message"] == report["message"]
         assert data["status"] == report["status"]
         assert data["result"] == report["result"]
-        assert data["_id"] == report["reportId"]
+        assert data["_id"] == report["_id"]
+        assert data["fail"] == report["fail"]
+        assert data["browser"] == report["browser"]
+        assert data["url"] == report["url"]
+        assert data["host"] == report["host"]
         assert data["parentId"] == pytest.set_report["_id"]
