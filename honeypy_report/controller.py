@@ -612,7 +612,7 @@ class ReportController(object):
         fields = self.return_specific_fields(deep)
         query, skip, page_number = self.get_pagination(query)
         reports, total, search_total = self.db.search(query["search"], skip, query["pagination"]["limit"], query["pagination"]["sort"])
-        reports = self.check_search_results(query["search"]["kind"], reports, fields)
+        # reports = self.check_search_results(query["search"]["kind"], reports, fields)
         return self.common.create_response(200, {"results": reports, "pagination": {"page":query["pagination"]["page"], "limit":query["pagination"]["limit"], "total": total, "amount":search_total}})
 
     def set_query_date(self, query):
