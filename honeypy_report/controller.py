@@ -391,7 +391,8 @@ class ReportController(object):
         if "parentId" not in report:
             raise ValidationError(errors = "Please provide a parent set ID with the report rerun request")
         self.validate_report(report)
-        report.pop("end")
+        if "end" in report:
+            report.pop("end")
         response = self.create_feature_report(report)
         rerun_report_id = str(response.inserted_id)
         set_report_id = report["parentId"]
