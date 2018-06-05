@@ -15,6 +15,7 @@ from honeypy_report.tests.set_report.set_report_status import (
 from honeypy.api.report import ReportService
 from honeypy.api.test import TestService
 from honeypy.api.set import SetService
+from honeypy.tests.assertions.helpers import Helpers
 from honeypy.tests.assertions.report import ReportAssertions
 
 def setup_module(module):
@@ -25,6 +26,7 @@ def setup_module(module):
     global report_service
     global set_service
     global assertions
+    global helpers
 
     global report
     global report_id
@@ -33,52 +35,20 @@ def setup_module(module):
     global feature_3_id
     global _set
 
+    helpers = Helpers()
     test_service = TestService()
     report_service = ReportService()
     set_service = SetService()
     assertions = ReportAssertions()
-    feature_1_id = setup_feature(FEATURE_1, test_service, report_service)
-    feature_2_id = setup_feature(FEATURE_2, test_service, report_service)
-    feature_3_id = setup_feature(FEATURE_3, test_service, report_service)
-    _set = create_set(SET, set_service)
-    report_id = create_report(_set, report_service)
-    report = get_report(report_id, report_service)
+    feature_1_id = helpers.setup_feature(FEATURE_1)
+    feature_2_id = helpers.setup_feature(FEATURE_2)
+    feature_3_id = helpers.setup_feature(FEATURE_3)
+    _set = helpers.create_set(SET)
+    report_id = helpers.create_report(_set)
+    report = helpers.get_report(report_id, True)
     feature_1_id = report["reports"][0]["_id"]
     feature_2_id = report["reports"][1]["_id"]
     feature_3_id = report["reports"][2]["_id"]
-
-def setup_feature(feature, test_service, report_service):
-    """
-        Setup feature file
-    """
-    test_service.delete(feature["path"], "feature")
-    response = test_service.create(feature)
-    assert response.status_code == 201
-    response = test_service.get(feature["path"], "feature")
-    assert response.status_code == 200
-    return response.json()
-
-def create_report(feature, report_service):
-    """
-        Create a report
-    """
-    response = report_service.create(feature)
-    assert response.status_code == 201
-    return response.json()["id"]
-
-def get_report(report_id, report_service):
-    """
-        Get a report by ID
-    """
-    return report_service.get(report_id).json()
-
-def create_set(_set, set_service):
-    """
-        Create a set
-    """
-    set_service.delete(_set["name"])
-    response = set_service.create(_set)
-    return set_service.get(_set["name"]).json()
 
 class Test:
 

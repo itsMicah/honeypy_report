@@ -16,6 +16,7 @@ from honeypy_report.tests.set_report.scenario_fail import (
 from honeypy.api.report import ReportService
 from honeypy.api.test import TestService
 from honeypy.api.set import SetService
+from honeypy.tests.assertions.helpers import Helpers
 from honeypy.tests.assertions.report import ReportAssertions
 
 def setup_module(module):
@@ -26,6 +27,7 @@ def setup_module(module):
     global report_service
     global set_service
     global assertions
+    global helpers
 
     global report
     global report_id
@@ -34,16 +36,17 @@ def setup_module(module):
     global feature_3_id
     global _set
 
+    helpers = Helpers()
     test_service = TestService()
     report_service = ReportService()
     set_service = SetService()
     assertions = ReportAssertions()
-    feature_1_id = setup_feature(FEATURE_1, test_service, report_service)
-    feature_2_id = setup_feature(FEATURE_2, test_service, report_service)
-    feature_3_id = setup_feature(FEATURE_3, test_service, report_service)
-    _set = create_set(SET, set_service)
-    report_id = create_report(_set, report_service)
-    report = get_report(report_id, report_service)
+    feature_1_id = helpers.setup_feature(FEATURE_1)
+    feature_2_id = helpers.setup_feature(FEATURE_2)
+    feature_3_id = helpers.setup_feature(FEATURE_3)
+    _set = helpers.create_set(SET)
+    report_id = helpers.create_report(_set)
+    report = helpers.get_report(report_id, True)
     feature_1_id = report["reports"][0]["_id"]
     feature_2_id = report["reports"][1]["_id"]
     feature_3_id = report["reports"][2]["_id"]

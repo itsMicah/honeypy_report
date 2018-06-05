@@ -73,7 +73,7 @@ class TestCreateSet:
         assert response.status_code == 201
 
         set_report_id = response.json()["id"]
-        pytest.set_report = report_service.get(set_report_id).json()
+        pytest.set_report = report_service.get(set_report_id, True).json()
         assert all(item in pytest.set_report.items() for item in _set.items())
 
     def test_feature_a_report(self):
