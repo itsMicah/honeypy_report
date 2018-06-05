@@ -24,7 +24,7 @@ class ReportController(object):
         self.environment = {}
         self.db = Database(api.config['DATABASE_IP'], api.config['DATABASE_PORT'], api.config['REPORT_DB_NAME'], api.config['REPORT_DB_COLLECTION'])
 
-    def get(self, report_id):
+    def get(self, report_id, deep = False):
         """
             Get a report by ID and kind
 
@@ -33,7 +33,8 @@ class ReportController(object):
         """
         report = self.db.find_one({"_id":ObjectId(report_id)})
         if report:
-            report = self.get_set_features(report)
+            if deep:
+                report = self.get_set_features(report)
             return self.common.create_response(200, report)
         else:
             return self.common.create_response(400, {"reportId": [f"Report ID does not exist ({report_id})"]})
@@ -108,6 +109,7 @@ class ReportController(object):
         response = TestService().get(path, "feature")
         if response.status_code == 200:
             data = response.json()
+            data["environment"] = _set["environment"]["name"]
             data["parentId"] = str(parentId)
             response = self.create(data)
             feature["reportId"] = json.loads(response.response[0])["id"]
@@ -497,23 +499,49 @@ class ReportController(object):
             Get the full dashboard
         """
         query = self.validate_dashboard_query(query)
+        self.init_query_hosts(query)
+        self.init_query_dates(query)
+        self.init_query_environment(query)
+        browsers, dashboard = self.init_query_browsers(query)
+        dashboard = self.organize_dashboard(dashboard, browsers)
+        return self.common.create_response(200, dashboard)
+
+    def init_query_browsers(self, query):
+        """
+            Setup query with browsers
+        """
         browsers = query["browsers"]
         query.pop("browsers")
         dashboard = {}
-        query["created"]["$gte"] = query["created"].pop("min")
-        query["created"]["$lte"] = query["created"].pop("max")
-        query["environment.name"] = query["environment"]
-        query.pop("environment")
-        if len(query["hosts"]) > 0:
-            hosts = query["hosts"]
-            query["host"] = {"$in":hosts}
-        query.pop("hosts")
         for browser in browsers:
             query["browser"] = browser
             reports = self.db.aggregate(query)
             dashboard[browser] = reports
-        dashboard = self.organize_dashboard(dashboard, browsers)
-        return self.common.create_response(200, dashboard)
+        return browsers, dashboard
+
+    def init_query_environment(self, query):
+        """
+            Setup query with the environment
+        """
+        query["environment.name"] = query["environment"]
+        query.pop("environment")
+
+    def init_query_dates(self, query):
+        """
+            Adjust query to use correct DTO
+        """
+        query["created"]["$gte"] = query["created"].pop("min")
+        query["created"]["$lte"] = query["created"].pop("max")
+
+    def init_query_hosts(self, query):
+        """
+            Setup query with hosts
+        """
+        if "hosts" in query:
+            if len(query["hosts"]) > 0:
+                hosts = query["hosts"]
+                query["host"] = {"$in":hosts}
+            query.pop("hosts")
 
     def validate_dashboard_query(self, query):
         """

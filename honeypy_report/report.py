@@ -48,7 +48,8 @@ def post_report():
 @api.route("/<report_id>", methods = ["GET"])
 @basic_auth.required
 def get_report(report_id):
-    return ReportController().get(report_id)
+    deep = request.args.get('deep')
+    return ReportController().get(report_id, deep)
 
 @api.route("/<report_id>", methods = ["PATCH"])
 @basic_auth.required
