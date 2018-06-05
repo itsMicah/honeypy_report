@@ -5,7 +5,7 @@ from honeypy_report.tests.crud.create import (
     DEFAULT_SET_REPORT,
     FEATURES
 )
-from honeypy.tests.fixtures.report_assertions import ReportAssertions
+from honeypy.tests.assertions.report import ReportAssertions
 from honeypy.api.report import ReportService
 from honeypy.api.test import TestService
 
@@ -73,7 +73,7 @@ class TestCreateSet:
         assert response.status_code == 201
 
         set_report_id = response.json()["id"]
-        pytest.set_report = report_service.get(set_report_id).json()
+        pytest.set_report = report_service.get(set_report_id, True).json()
         assert all(item in pytest.set_report.items() for item in _set.items())
 
     def test_feature_a_report(self):
@@ -85,8 +85,16 @@ class TestCreateSet:
         response = report_service.get(pytest.feature_report_a_id)
 
         assert response.status_code == 200
-        assert response.json() == report
-        assert report["parentId"] == pytest.set_report["_id"]
+        data = response.json()
+        assert data["message"] == report["message"]
+        assert data["fail"] == report["fail"]
+        assert data["browser"] == report["browser"]
+        assert data["url"] == report["url"]
+        assert data["host"] == report["host"]
+        assert data["status"] == report["status"]
+        assert data["result"] == report["result"]
+        assert data["_id"] == report["_id"]
+        assert data["parentId"] == pytest.set_report["_id"]
 
     def test_feature_b_report(self):
         """
@@ -97,8 +105,16 @@ class TestCreateSet:
         response = report_service.get(pytest.feature_report_b_id)
 
         assert response.status_code == 200
-        assert response.json() == report
-        assert report["parentId"] == pytest.set_report["_id"]
+        data = response.json()
+        assert data["message"] == report["message"]
+        assert data["status"] == report["status"]
+        assert data["result"] == report["result"]
+        assert data["_id"] == report["_id"]
+        assert data["fail"] == report["fail"]
+        assert data["browser"] == report["browser"]
+        assert data["url"] == report["url"]
+        assert data["host"] == report["host"]
+        assert data["parentId"] == pytest.set_report["_id"]
 
     def test_feature_c_report(self):
         """
@@ -109,5 +125,13 @@ class TestCreateSet:
         response = report_service.get(pytest.feature_report_c_id)
 
         assert response.status_code == 200
-        assert response.json() == report
-        assert report["parentId"] == pytest.set_report["_id"]
+        data = response.json()
+        assert data["message"] == report["message"]
+        assert data["status"] == report["status"]
+        assert data["result"] == report["result"]
+        assert data["_id"] == report["_id"]
+        assert data["fail"] == report["fail"]
+        assert data["browser"] == report["browser"]
+        assert data["url"] == report["url"]
+        assert data["host"] == report["host"]
+        assert data["parentId"] == pytest.set_report["_id"]

@@ -1,4 +1,4 @@
-import time, json, pymongo, re, datetime
+import os, time, json, pymongo, re, datetime
 from cerberus import Validator
 from pymongo import MongoClient
 from flask import Flask
@@ -24,7 +24,7 @@ class ReportController(object):
         self.environment = {}
         self.db = Database(api.config['DATABASE_IP'], api.config['DATABASE_PORT'], api.config['REPORT_DB_NAME'], api.config['REPORT_DB_COLLECTION'])
 
-    def get(self, report_id):
+    def get(self, report_id, deep = False):
         """
             Get a report by ID and kind
 
@@ -33,7 +33,8 @@ class ReportController(object):
         """
         report = self.db.find_one({"_id":ObjectId(report_id)})
         if report:
-            report = self.get_set_features(report)
+            if deep:
+                report = self.get_set_features(report)
             return self.common.create_response(200, report)
         else:
             return self.common.create_response(400, {"reportId": [f"Report ID does not exist ({report_id})"]})
@@ -87,13 +88,13 @@ class ReportController(object):
         return response
 
     def get_environment_variables(self, data, init = False):
-        if data["environment"]:
-            if init:
-                response = EnvironmentService().get(data["environment"])
-                if response.status_code == 200:
-                    self.environment = response.json()
-                    self.variables = self.environment["variables"]
-            data["environment"] = self.environment
+        response = EnvironmentService().get(data["environment"])
+        if response.status_code == 200:
+            self.environment = response.json()
+            self.variables = self.environment["variables"]
+        else:
+            self.environment = {"name":data["environment"], "variables":{}}
+        data["environment"] = self.environment
         return data
 
     def create_set_feature(self, path, parentId, _set):
@@ -104,17 +105,22 @@ class ReportController(object):
             :path: path to the feature
             :parentId: the set report ID
         """
-        feature = {"path":path}
+        feature = {"path":path,"name":os.path.basename(path)}
         response = TestService().get(path, "feature")
         if response.status_code == 200:
             data = response.json()
+            data["environment"] = _set["environment"]["name"]
             data["parentId"] = str(parentId)
             response = self.create(data)
             feature["reportId"] = json.loads(response.response[0])["id"]
-            feature["message"] = "Success"
+            feature["message"] = None
+            feature["fail"] = data["fail"]
+            feature["status"] = "Queued"
+            feature["result"] = None
+            feature["parentId"] = str(parentId)
             self.db.update_one({"_id":ObjectId(parentId)}, {"$push":{"reports": feature}})
         else:
-            feature = {"kind":"feature", "path":path, "result":None, "message":None, "status":None}
+            feature = {"kind":"feature", "path":path, "result":None, "message":None, "status":None, "parentId":str(parentId), "fail":False}
             self.db.update_one({"_id":ObjectId(parentId)}, {"$push":{"reports": feature}})
 
     def check_inheritance(self, setId, feature):
@@ -135,8 +141,9 @@ class ReportController(object):
             Check if environment contains an overwriting base url
             If so, change the report base url
         """
-        if "base_url" in data["environment"]["variables"]:
-            data["url"] = data["environment"]["variables"]["base_url"]
+        if "environment" in data:
+            if "base_url" in data["environment"]["variables"]:
+                data["url"] = data["environment"]["variables"]["base_url"]
         return data
 
     def validate_report(self, data, update = False, normalize = True):
@@ -147,7 +154,7 @@ class ReportController(object):
             :update: should service validate report as an update action
             :normalize: should default values be defined
         """
-        validator = Validator(Schemas().report, allow_unknown = True, ignore_none_values = True)
+        validator = Validator(Schemas().report, allow_unknown = True)
         data = self.normalize(normalize, data, validator)
         validation = validator.validate(data, update = update)
         if not validation:
@@ -324,13 +331,13 @@ class ReportController(object):
 
     def update_set_result(self, report, data):
         """
-            Update a set report if the a feature failed
+            Update a set report if a feature failed
 
             :report: the report
             :data: the test object
         """
         if "parentId" in report:
-            self.db.update_one({"_id":ObjectId(report["parentId"])}, {"$set": {"result":False, "message":"Failure"}})
+            self.db.update_one({"_id":ObjectId(report["parentId"]), "reports.reportId":report["_id"]}, {"$set": {"result":False, "message":"Failure", "reports.$.result":False, "reports.$.message":"Failure"}})
 
     def update_feature_result(self, report, data):
         """
@@ -350,6 +357,59 @@ class ReportController(object):
         """
         if "scenarioId" in data:
             self.db.update_one({"_id":ObjectId(report["_id"]), "tests.scenarioId": data["scenarioId"]}, {'$set': {'tests.$.result':False, "tests.$.message":"Failure"}})
+
+    def update_status(self, _type, report_id, path):
+        """
+            Check what status
+        """
+        if _type == "start":
+            return self.start(report_id, path)
+        elif _type == "finish":
+            return self.finish(report_id, path)
+        else:
+            return self.common.create_response(400, {"type": [f"Type value of '{_type}' is invalid"]})
+
+    def start(self, report_id, path):
+        """
+            Change report status to running
+
+            :report_id: the id of the report
+            :path: the path string of the test
+        """
+        report = self.db.find_one({"_id":ObjectId(report_id)})
+        if "parentId" in report:
+            response = self.db.update_one({"_id":ObjectId(report["parentId"]), "reports.reportId":report_id}, {"$set":{"status":"Running", "reports.$.status":"Running"}})
+            response = self.db.update_one({"_id":ObjectId(report_id)}, {"$set":{"status":"Running"}})
+        else:
+            response = self.db.update_one({"_id":ObjectId(report["_id"])}, {"$set":{"status":"Running"}})
+        return self.common.create_response(204)
+
+    def rerun(self, feature_report_id, report):
+        """
+            Setup a feature report to be rerun
+        """
+        if "parentId" not in report:
+            raise ValidationError(errors = "Please provide a parent set ID with the report rerun request")
+        self.validate_report(report)
+        report.pop("end")
+        response = self.create_feature_report(report)
+        rerun_report_id = str(response.inserted_id)
+        set_report_id = report["parentId"]
+        feature = {
+            "path":report["path"],
+            "name":report["name"],
+            "message":None,
+            "status":"Queued",
+            "result":None,
+            "fail":report["fail"],
+            "parentId":set_report_id,
+            "reportId":rerun_report_id
+        }
+        response = self.db.update_one({"_id":ObjectId(set_report_id), "reports.reportId":feature_report_id}, {"$set":{"reports.$":feature}})
+        if response.matched_count > 0:
+            return self.common.create_response(201, {"id":str(rerun_report_id)})
+        else:
+            return self.common.create_response(404, {"reportId":"Report ID could not be found"})
 
     def finish(self, report_id, path):
         """
@@ -439,16 +499,49 @@ class ReportController(object):
             Get the full dashboard
         """
         query = self.validate_dashboard_query(query)
+        self.init_query_hosts(query)
+        self.init_query_dates(query)
+        self.init_query_environment(query)
+        browsers, dashboard = self.init_query_browsers(query)
+        dashboard = self.organize_dashboard(dashboard, browsers)
+        return self.common.create_response(200, dashboard)
+
+    def init_query_browsers(self, query):
+        """
+            Setup query with browsers
+        """
         browsers = query["browsers"]
         query.pop("browsers")
         dashboard = {}
-        query["created"]["$gte"] = query["created"].pop("min")
-        query["created"]["$lte"] = query["created"].pop("max")
         for browser in browsers:
             query["browser"] = browser
             reports = self.db.aggregate(query)
             dashboard[browser] = reports
-        return self.common.create_response(200, dashboard)
+        return browsers, dashboard
+
+    def init_query_environment(self, query):
+        """
+            Setup query with the environment
+        """
+        query["environment.name"] = query["environment"]
+        query.pop("environment")
+
+    def init_query_dates(self, query):
+        """
+            Adjust query to use correct DTO
+        """
+        query["created"]["$gte"] = query["created"].pop("min")
+        query["created"]["$lte"] = query["created"].pop("max")
+
+    def init_query_hosts(self, query):
+        """
+            Setup query with hosts
+        """
+        if "hosts" in query:
+            if len(query["hosts"]) > 0:
+                hosts = query["hosts"]
+                query["host"] = {"$in":hosts}
+            query.pop("hosts")
 
     def validate_dashboard_query(self, query):
         """
@@ -462,6 +555,46 @@ class ReportController(object):
         if not validation:
             raise ValidationError(validator.errors)
         return query
+
+    def organize_dashboard(self, dashboard, browsers):
+        """
+            Create a new dashboard object
+            Organize the reports by browser
+
+            :dashboard: the returned mongo query organized by set/browser
+            :browsers: all the browsers searched in the query
+        """
+        new_dashboard = {}
+        for browser,reports in dashboard.items():
+            for report in reports:
+                    name = report["_id"]
+                    new_dashboard = self.add_set_to_dashboard(name, new_dashboard, browsers)
+                    new_dashboard = self.add_report_to_dashboard_set(new_dashboard, name, browser, report)
+        return new_dashboard
+
+
+    def add_set_to_dashboard(self, name, new_dashboard, browsers):
+        """
+            Add set name to the new dashboard object
+            We want to add each set returned to the object
+
+            :name: the name of the set
+            :new_dashboard: the new dashboard object
+            :browsers: the browsers used in the query
+        """
+        if name not in new_dashboard:
+            new_dashboard[name] = {}
+            for supported_browser in browsers:
+                new_dashboard[name][supported_browser] = []
+        return new_dashboard
+
+    def add_report_to_dashboard_set(self, new_dashboard, name, browser, report):
+        """
+            Add a set report to the dashboard
+            Insert the set report within the set name and browser/device type
+        """
+        new_dashboard[name][browser].append(report)
+        return new_dashboard
 
     def search(self, query, deep):
         """

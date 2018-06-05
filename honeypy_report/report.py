@@ -48,7 +48,8 @@ def post_report():
 @api.route("/<report_id>", methods = ["GET"])
 @basic_auth.required
 def get_report(report_id):
-    return ReportController().get(report_id)
+    deep = request.args.get('deep')
+    return ReportController().get(report_id, deep)
 
 @api.route("/<report_id>", methods = ["PATCH"])
 @basic_auth.required
@@ -70,15 +71,27 @@ def add_test(report_id):
         return Common().create_response(400, error.errors)
 
 """
+    Setup a feature to be rerun
+"""
+@api.route("/<report_id>/rerun", methods = ["POST"])
+@basic_auth.required
+def rerun_feature(report_id):
+    try:
+        return ReportController().rerun(report_id, request.get_json())
+    except ValidationError as error:
+        return Common().create_response(400, error.errors)
+
+"""
     Finish a feature report
     Also update a set report result if the feature is part of a set run
 """
-@api.route("/<report_id>/finish", methods = ["GET"])
+@api.route("/<report_id>/status", methods = ["GET"])
 @basic_auth.required
 def finish(report_id):
     try:
         path = request.args.get('path')
-        return ReportController().finish(report_id, path)
+        type = request.args.get('type')
+        return ReportController().update_status(type, report_id, path)
     except ValidationError as error:
         return Common().create_response(400, error.errors)
 

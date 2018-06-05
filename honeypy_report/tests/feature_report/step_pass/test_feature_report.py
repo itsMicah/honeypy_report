@@ -7,7 +7,7 @@ from honeypy_report.tests.feature_report.step_pass import (
     STEPS
 )
 
-from honeypy.tests.fixtures.report_assertions import ReportAssertions
+from honeypy.tests.assertions.report import ReportAssertions
 from honeypy.api.report import ReportService
 from honeypy.api.test import TestService
 
@@ -86,7 +86,7 @@ def test_verify_added_step_3():
     assertions.assert_step(data["tests"][2], STEPS[2])
 
 def test_finish_feature():
-    response = report_service.finish(report_id)
+    response = report_service.status("finish", report_id)
     assert response.status_code == 204
 
 def test_verify_finish():

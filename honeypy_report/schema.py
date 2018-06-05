@@ -35,6 +35,15 @@ class Schemas(object):
                 "default": None,
                 "nullable": True
             },
+            "status": {
+                "type": "string",
+                "default": "Queued"
+            },
+            "message": {
+                "type": "string",
+                "nullable": True,
+                "default": None
+            },
             "fail": {
                 "type": "boolean",
                 "default": False
@@ -47,16 +56,13 @@ class Schemas(object):
                 "type": "string",
                 "default": ""
             },
-            "status": {
-                "type": "string",
-                "default": "Queued"
-            },
             "name": {
                 "type": "string",
                 "required": True
             },
             "environment": {
                 "type": "string",
+                "required": True,
                 "default": None,
                 "nullable": True
             },
@@ -94,9 +100,6 @@ class Schemas(object):
                 }
             },
             "parentId": {
-                "type": "string"
-            },
-            "message": {
                 "type": "string"
             }
         }
@@ -314,8 +317,11 @@ class Schemas(object):
                     "$lte": Common().get_timestamp()
                 }
             },
-            "host": {
-                "type": "string"
+            "hosts": {
+                "type": "list",
+                "schema": {
+                    "type":"string"
+                }
             },
             "url": {
                 "type": "string"
@@ -325,7 +331,8 @@ class Schemas(object):
                 "default": api.config["BROWSERS"],
                 "allowed": api.config["BROWSERS"]
             },
-            "name": {
-                "type": "string"
+            "environment": {
+                "type": "string",
+                "required": True
             }
         }

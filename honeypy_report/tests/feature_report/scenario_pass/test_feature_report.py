@@ -1,7 +1,7 @@
 import pytest
 from copy import deepcopy
 
-from honeypy.tests.fixtures.report_assertions import ReportAssertions
+from honeypy.tests.assertions.report import ReportAssertions
 
 from honeypy_report.tests.feature_report.scenario_pass import (
     FEATURE,
@@ -218,7 +218,7 @@ class Test:
         """
             Finish the feature report
         """
-        response = report_service.finish(report_id)
+        response = report_service.status("finish", report_id)
         assert response.status_code == 204
 
     def test_verify_finish(self):
